@@ -1,0 +1,5 @@
+* e72474e (HEAD -> main) Removed terraform state backup file from git tracking
+* 98376ca Added explicit patterns for terraform state backup files
+* 47b6623 Removed Terraform-specific files from git tracking
+* e61b3f5 Updated .gitignore with Terraform-specific ignores
+* 837a777 first commit

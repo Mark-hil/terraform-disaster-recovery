@@ -1,0 +1,54 @@
+output "vpc_id" {
+  description = "VPC ID"
+  value       = module.vpc.vpc_id
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value       = module.vpc.private_subnet_ids
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs"
+  value       = module.vpc.public_subnet_ids
+}
+
+output "app_security_group_id" {
+  description = "Application security group ID"
+  value       = module.security_group.app_security_group_id
+}
+
+output "rds_endpoint" {
+  description = "RDS endpoint"
+  value       = module.primary_rds.rds_endpoint
+}
+
+output "rds_port" {
+  description = "RDS port"
+  value       = module.primary_rds.rds_port
+}
+
+output "rds_username" {
+  description = "RDS username"
+  value       = module.primary_rds.rds_username
+}
+
+output "rds_database_name" {
+  description = "RDS database name"
+  value       = module.primary_rds.rds_database_name
+}
+
+output "s3_bucket_arn" {
+  description = "S3 bucket ARN"
+  value       = module.primary_s3.s3_bucket_arn
+}
+
+output "s3_bucket_id" {
+  description = "S3 bucket ID"
+  value       = module.primary_s3.s3_bucket_id
+}
+
+output "s3_bucket_domain_name" {
+  description = "S3 bucket domain name"
+  value       = module.primary_s3.s3_bucket_domain_name
+}

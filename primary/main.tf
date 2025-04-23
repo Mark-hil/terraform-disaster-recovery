@@ -1,7 +1,7 @@
 # Create IAM roles and policies
 # RDS monitoring role
 resource "aws_iam_role" "rds_monitoring" {
-  name               = "${var.environment}-${var.aws_region}-rds-monitoring-role"
+  name               = "${var.environment}-${var.primary_region}-rds-monitoring-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -25,7 +25,7 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
 
 # EC2 role
 resource "aws_iam_role" "ec2_role" {
-  name               = "${var.environment}-${var.aws_region}-ec2-role"
+  name               = "${var.environment}-${var.primary_region}-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -54,13 +54,13 @@ resource "aws_iam_role_policy_attachment" "ec2_secrets" {
 
 # Create EC2 instance profile
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${var.environment}-${var.aws_region}-ec2-profile"
+  name = "${var.environment}-${var.primary_region}-ec2-profile"
   role = aws_iam_role.ec2_role.name
 }
 
 # Create S3 replication role
 resource "aws_iam_role" "s3_replication" {
-  name               = "${var.environment}-${var.aws_region}-s3-replication-role"
+  name               = "${var.environment}-${var.primary_region}-s3-replication-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -78,7 +78,7 @@ resource "aws_iam_role" "s3_replication" {
 
 # Create S3 replication policy
 resource "aws_iam_policy" "s3_replication" {
-  name        = "${var.environment}-${var.aws_region}-s3-replication-policy"
+  name        = "${var.environment}-${var.primary_region}-s3-replication-policy"
   description = "Allows S3 to replicate objects to DR region"
   policy      = jsonencode({
     Version = "2012-10-17"
@@ -205,13 +205,18 @@ module "primary_ec2" {
     aws = aws
   }
 
-  environment = var.environment
-  vpc_id = module.vpc.vpc_id
-  subnet_ids = module.vpc.public_subnet_ids
-  instance_type = "t3.micro"
-  instance_count = 1
-  security_group_ids = [module.security_group.app_security_group_id]
+  environment           = var.environment
+  vpc_id               = module.vpc.vpc_id
+  subnet_ids           = module.vpc.public_subnet_ids
+  instance_type        = "t3.micro"
+  instance_count       = 1
+  security_group_ids   = [module.security_group.app_security_group_id]
   instance_profile_name = aws_iam_instance_profile.ec2_profile.name
+
+  # Docker configuration
+  docker_image    = "nginx:latest"  # You can change this to any Docker image
+  container_port  = 80
+  host_port       = 80
 
   tags = var.tags
 }
@@ -228,7 +233,7 @@ module "cloudwatch" {
 
   project_name = var.project_name
   environment = var.environment
-  region = var.aws_region
+  region = var.primary_region
   alarm_topic_arns = []
 
   tags = var.tags
@@ -245,7 +250,7 @@ module "vpc" {
   }
 
   environment = var.environment
-  region = var.aws_region
+  region = var.primary_region
   vpc_cidr = var.vpc_cidr
   availability_zones = var.availability_zones
   private_subnet_cidrs = var.private_subnet_cidrs
@@ -268,4 +273,45 @@ module "security_group" {
   project_name = var.project_name
 
   tags = var.tags
+}
+
+# Application Load Balancer
+module "alb" {
+  source = "../modules/alb"
+  providers = {
+    aws = aws.primary
+  }
+
+  environment = var.environment
+  name        = "app"
+  vpc_id      = module.vpc.vpc_id
+  subnet_ids  = module.vpc.public_subnet_ids
+  instance_ids = module.primary_ec2.instance_ids
+
+  tags = var.tags
+}
+
+# Lambda Function for DR Failover
+module "lambda_failover" {
+  source = "../modules/lambda_failover"
+
+  environment        = var.environment
+  project_name      = var.project_name
+  primary_region     = var.primary_region
+  dr_region         = var.dr_region
+  primary_ec2_ids   = module.primary_ec2.instance_ids
+  dr_ec2_ids       = [var.dr_instance_id]
+  dr_rds_identifier = "prod-awsdrprojectdb-dr-replica"
+  
+  primary_alb_arn   = module.alb.alb_arn
+  dr_alb_arn       = var.dr_alb_arn
+  primary_target_group_arn = module.alb.target_group_arn
+  dr_target_group_arn     = var.dr_target_group_arn
+  primary_rds_id   = module.primary_rds.primary_db_instance_id
+
+  tags = local.tags
+
+  providers = {
+    aws = aws.primary
+  }
 }

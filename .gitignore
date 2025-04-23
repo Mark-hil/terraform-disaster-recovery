@@ -23,9 +23,6 @@ crash.*.log
 *.tfvars
 *.tfvars.json
 
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
 
 # Ignore Mac/OSX system files
 .DS_Store

@@ -25,7 +25,7 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
 
 # EC2 role
 resource "aws_iam_role" "ec2_role" {
-  name               = "${var.environment}-${var.aws_region}-ec2-role"
+  name               = "${var.environment}-${var.project_name}-${var.aws_region}-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -54,7 +54,7 @@ resource "aws_iam_role_policy_attachment" "ec2_secrets" {
 
 # EC2 instance profile
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${var.environment}-${var.aws_region}-ec2-profile"
+  name = "${var.environment}-${var.project_name}-${var.aws_region}-ec2-profile"
   role = aws_iam_role.ec2_role.name
 }
 
@@ -79,7 +79,7 @@ module "dr_s3" {
 
 # Phase 4: Update IAM policies with resource ARNs
 resource "aws_iam_role_policy" "ec2_policy" {
-  name = "${var.environment}-ec2-policy"
+  name = "${var.environment}-${var.project_name}-ec2-policy"
   role = aws_iam_role.ec2_role.name
 
   policy = jsonencode({
@@ -100,27 +100,32 @@ resource "aws_iam_role_policy" "ec2_policy" {
   })
 }
 
-# Phase 5: Create EC2 instances
+# Phase 4: Create EC2 instances
 module "dr_ec2" {
   source = "../modules/ec2"
   providers = {
     aws = aws
   }
 
-  environment = var.environment
-  vpc_id = module.vpc.vpc_id
-  subnet_ids = module.vpc.public_subnet_ids
-  instance_type = "t3.micro"
-  instance_count = 1
-  security_group_ids = [module.security_group.app_security_group_id]
+  environment           = var.environment
+  vpc_id               = module.vpc.vpc_id
+  subnet_ids           = module.vpc.public_subnet_ids
+  instance_type        = "t3.micro"
+  instance_count       = 1
+  instance_state       = "stopped"  # DR instance starts stopped to save costs
+  security_group_ids   = [module.security_group.app_security_group_id]
   instance_profile_name = aws_iam_instance_profile.ec2_profile.name
+
+  # Docker configuration - same as primary for consistency
+  docker_image    = "nginx:latest"
+  container_port  = 80
+  host_port       = 80
 
   tags = merge(var.tags, {
     Environment = var.environment
     Region      = "DR"
+    Name        = "${var.environment}-${var.project_name}-app-instance-1"
   })
-
-  depends_on = [module.dr_s3]
 }
 
 # Phase 5: Create CloudWatch alarms and dashboard
@@ -173,6 +178,25 @@ module "security_group" {
   vpc_id       = module.vpc.vpc_id
   environment  = var.environment
   project_name = var.project_name
+
+  tags = merge(var.tags, {
+    Environment = var.environment
+    Region      = "DR"
+  })
+}
+
+# Application Load Balancer
+module "alb" {
+  source = "../modules/alb"
+  providers = {
+    aws = aws.dr
+  }
+
+  environment = var.environment
+  name        = "${var.environment}-${var.project_name}-app"
+  vpc_id      = module.vpc.vpc_id
+  subnet_ids  = module.vpc.public_subnet_ids
+  instance_ids = module.dr_ec2.instance_ids
 
   tags = merge(var.tags, {
     Environment = var.environment

@@ -1,21 +1,25 @@
 variable "project_name" {
   description = "Name of the project"
   type        = string
+  default     = "aws-dr-project"
 }
 
-variable "aws_region" {
-  description = "AWS region for primary resources"
+variable "primary_region" {
+  description = "AWS region for primary infrastructure"
   type        = string
+  default     = "eu-west-1"
 }
 
 variable "dr_region" {
-  description = "AWS region for DR resources"
+  description = "AWS region for DR infrastructure"
   type        = string
+  default     = "us-east-1"
 }
 
 variable "environment" {
   description = "Environment name"
   type        = string
+  default     = "prod"
 }
 
 variable "db_password" {
@@ -91,7 +95,29 @@ variable "dr_kms_key_arn" {
 }
 
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "Tags to apply to resources"
   type        = map(string)
-  default     = {}
+  default = {
+    Environment = "prod"
+    Project     = "aws-dr-project"
+  }
+}
+
+# DR module outputs
+variable "dr_instance_id" {
+  description = "ID of the DR EC2 instance"
+  type        = string
+  default     = ""
+}
+
+variable "dr_alb_arn" {
+  description = "ARN of the DR ALB"
+  type        = string
+  default     = ""
+}
+
+variable "dr_target_group_arn" {
+  description = "ARN of the DR ALB target group"
+  type        = string
+  default     = ""
 }

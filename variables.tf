@@ -2,6 +2,7 @@
 variable "project_name" {
   description = "Name of the project"
   type        = string
+  default     = "aws-dr-project"
 }
 
 variable "environment" {
@@ -19,25 +20,26 @@ variable "db_password" {
 variable "db_username" {
   description = "Username for the RDS instance"
   type        = string
+  default     = "admin"
 }
 
 variable "db_host" {
   description = "Hostname for the RDS instance"
   type        = string
-  default     = "localhost"
+  default     = "awsdrprojectdb"
 }
 
 # Region Settings
 variable "primary_region" {
   description = "AWS region for primary infrastructure"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-1"
 }
 
 variable "dr_region" {
   description = "AWS region for disaster recovery infrastructure"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 # Network Settings
@@ -56,7 +58,7 @@ variable "dr_vpc_cidr" {
 variable "primary_azs" {
   description = "List of availability zones in primary region"
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["eu-west-1a", "eu-west-1b"]
 }
 
 variable "dr_azs" {
@@ -105,18 +107,23 @@ variable "rds_allocated_storage" {
 variable "kms_key_arn" {
   description = "ARN of the KMS key for encryption (optional)"
   type        = string
-  default     = null
+  default     = ""
 }
 
 variable "dr_kms_key_arn" {
   description = "ARN of the KMS key for DR encryption (optional)"
   type        = string
-  default     = null
+  default     = ""
 }
 
 # Tags
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "Tags to apply to resources"
   type        = map(string)
-  default     = {}
+  default = {
+    Environment = "prod"
+    Project     = "aws-dr-project"
+    Owner       = "infrastructure-team"
+    Terraform   = "true"
+  }
 }

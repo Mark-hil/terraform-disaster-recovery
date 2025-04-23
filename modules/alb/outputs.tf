@@ -1,26 +1,21 @@
 output "alb_arn" {
-  description = "ARN of the Application Load Balancer"
-  value       = aws_lb.dr.arn
+  description = "ARN of the ALB"
+  value       = aws_lb.app.arn
 }
 
 output "alb_dns_name" {
-  description = "DNS name of the Application Load Balancer"
-  value       = aws_lb.dr.dns_name
+  description = "DNS name of the ALB"
+  value       = aws_lb.app.dns_name
 }
 
-output "primary_target_group_arn" {
-  description = "ARN of the primary RDS target group"
-  value       = aws_lb_target_group.primary.arn
-}
-
-output "dr_target_group_arn" {
-  description = "ARN of the DR RDS target group"
-  value       = aws_lb_target_group.dr.arn
+output "target_group_arn" {
+  description = "ARN of the target group"
+  value       = aws_lb_target_group.app.arn
 }
 
 output "listener_arn" {
   description = "ARN of the ALB listener"
-  value       = aws_lb_listener.dr.arn
+  value       = aws_lb_listener.app.arn
 }
 
 output "security_group_id" {

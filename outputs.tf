@@ -24,6 +24,11 @@ output "primary_s3_bucket_arn" {
   value       = module.primary.s3_bucket_arn
 }
 
+output "primary_security_group_id" {
+  description = "Primary security group ID"
+  value       = module.primary.app_security_group_id
+}
+
 # DR region outputs
 output "dr_vpc_id" {
   description = "DR VPC ID"

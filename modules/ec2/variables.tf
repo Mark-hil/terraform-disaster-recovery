@@ -47,11 +47,29 @@ variable "instance_profile_name" {
 variable "root_volume_size" {
   description = "Size of the root volume in GB"
   type        = number
-  default     = 30
+  default     = 10
 }
 
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
+}
+
+variable "docker_image" {
+  description = "Docker image to run on the instances"
+  type        = string
+  default     = "nginx:latest"
+}
+
+variable "container_port" {
+  description = "Port that the Docker container listens on"
+  type        = number
+  default     = 80
+}
+
+variable "host_port" {
+  description = "Port on the host to map to the container"
+  type        = number
+  default     = 80
 }

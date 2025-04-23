@@ -1,5 +1,10 @@
-variable "project_name" {
-  description = "Name of the project, used for resource naming"
+variable "environment" {
+  description = "Environment name (e.g., prod, dev)"
+  type        = string
+}
+
+variable "name" {
+  description = "Name for the ALB and related resources"
   type        = string
 }
 
@@ -13,25 +18,9 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "internal" {
-  description = "Whether the ALB is internal or internet-facing"
-  type        = bool
-  default     = true
-}
-
-variable "certificate_arn" {
-  description = "ARN of the SSL certificate for HTTPS"
-  type        = string
-}
-
-variable "primary_rds_address" {
-  description = "IP address or DNS name of the primary RDS instance"
-  type        = string
-}
-
-variable "dr_rds_address" {
-  description = "IP address or DNS name of the DR RDS instance"
-  type        = string
+variable "instance_ids" {
+  description = "List of EC2 instance IDs to attach to the target group"
+  type        = list(string)
 }
 
 variable "tags" {

@@ -2,13 +2,13 @@
 
 # ALB Security Group
 resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-alb-sg"
-  description = "Security group for DR ALB"
+  name        = "${var.environment}-${var.name}-alb-sg"
+  description = "Security group for ALB"
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 443
-    to_port     = 443
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -20,87 +20,71 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.name}-alb-sg"
+  })
 }
 
 # Application Load Balancer
-resource "aws_lb" "dr" {
-  name               = "${var.project_name}-dr-alb"
-  internal           = var.internal
+resource "aws_lb" "app" {
+  name               = "${var.environment}-${var.name}"
+  internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets           = var.subnet_ids
 
-  enable_deletion_protection = true
+  enable_deletion_protection = false
   enable_http2             = true
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.name}"
+  })
 }
 
-# Primary Target Group
-resource "aws_lb_target_group" "primary" {
-  name        = "${var.project_name}-primary-tg"
-  port        = 3306
-  protocol    = "TCP"
+# Target Group
+resource "aws_lb_target_group" "app" {
+  name        = "${var.environment}-${var.name}-tg"
+  port        = 80
+  protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"
+  target_type = "instance"
 
   health_check {
     enabled             = true
-    healthy_threshold   = 3
-    interval           = 30
-    protocol           = "TCP"
-    timeout            = 10
-    unhealthy_threshold = 3
+    healthy_threshold   = 2
+    interval           = 15
+    matcher            = "200"
+    path               = "/"
+    port               = "traffic-port"
+    protocol           = "HTTP"
+    timeout            = 5
+    unhealthy_threshold = 2
   }
 
-  tags = var.tags
-}
-
-# DR Target Group
-resource "aws_lb_target_group" "dr" {
-  name        = "${var.project_name}-dr-tg"
-  port        = 3306
-  protocol    = "TCP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 3
-    interval           = 30
-    protocol           = "TCP"
-    timeout            = 10
-    unhealthy_threshold = 3
-  }
-
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.name}-tg"
+  })
 }
 
 # ALB Listener
-resource "aws_lb_listener" "dr" {
-  load_balancer_arn = aws_lb.dr.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = var.certificate_arn
+resource "aws_lb_listener" "app" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = "80"
+  protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.primary.arn
+    target_group_arn = aws_lb_target_group.app.arn
   }
 }
 
-# Attach Primary RDS to Target Group
-resource "aws_lb_target_group_attachment" "primary" {
-  target_group_arn = aws_lb_target_group.primary.arn
-  target_id        = var.primary_rds_address
-  port             = 3306
+# Target Group Attachment
+resource "aws_lb_target_group_attachment" "app" {
+  count            = length(var.instance_ids)
+  target_group_arn = aws_lb_target_group.app.arn
+  target_id        = var.instance_ids[count.index]
+  port             = 80
 }
 
 # Attach DR RDS to Target Group
-resource "aws_lb_target_group_attachment" "dr" {
-  target_group_arn = aws_lb_target_group.dr.arn
-  target_id        = var.dr_rds_address
-  port             = 3306
-}
+# Removed incorrect target group reference

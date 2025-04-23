@@ -48,17 +48,17 @@ resource "aws_security_group" "rds" {
 # Primary RDS Instance
 resource "aws_db_instance" "primary" {
   identifier           = lower("${var.environment}-${var.database_name}")
+  instance_class      = "db.t3.micro"
   allocated_storage    = 20
   storage_type        = "gp2"
   engine              = "mysql"
   engine_version      = "8.0"
-  instance_class      = "db.t3.micro"
   db_name             = var.database_name
   username            = var.db_username
   password            = var.db_password
   skip_final_snapshot = true
-  deletion_protection = false
-
+  multi_az            = false  # Disable Multi-AZ for cost savings
+  
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.primary.name
   parameter_group_name   = aws_db_parameter_group.primary.name
@@ -67,7 +67,7 @@ resource "aws_db_instance" "primary" {
   backup_window          = "03:00-04:00"
   maintenance_window     = "Mon:04:00-Mon:05:00"
 
-  monitoring_interval = 60
+  monitoring_interval = 60  # Changed from 300 to 60 as it's the maximum allowed value
   monitoring_role_arn = var.monitoring_role_arn
 
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
@@ -86,7 +86,7 @@ resource "aws_db_instance" "dr_replica" {
   backup_window          = "03:00-04:00"
   maintenance_window     = "Mon:04:00-Mon:05:00"
 
-  monitoring_interval = 60
+  monitoring_interval = 60  # Changed from 300 to 60 as it's the maximum allowed value
   monitoring_role_arn = var.monitoring_role_arn
 
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]

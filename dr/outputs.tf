@@ -32,3 +32,20 @@ output "security_group_id" {
   description = "ID of the DR security group"
   value       = module.security_group.app_security_group_id
 }
+
+# EC2 outputs
+output "dr_instance_id" {
+  description = "ID of the DR EC2 instance"
+  value       = module.dr_ec2.instance_ids[0]
+}
+
+# ALB outputs
+output "dr_target_group_arn" {
+  description = "ARN of the DR ALB target group"
+  value       = module.alb.target_group_arn
+}
+
+output "dr_alb_arn" {
+  description = "ARN of the DR ALB"
+  value       = module.alb.alb_arn
+}

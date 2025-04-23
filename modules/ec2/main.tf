@@ -26,19 +26,26 @@ resource "aws_instance" "app_instances" {
   iam_instance_profile        = var.instance_profile_name
   associate_public_ip_address = true
 
+  user_data = templatefile("${path.module}/templates/user_data.sh.tpl", {
+    docker_image    = var.docker_image
+    container_port  = var.container_port
+    host_port       = var.host_port
+  })
+
   root_block_device {
     volume_size = var.root_volume_size
     volume_type = "gp2"
     encrypted   = true
   }
 
-  tags = {
+  tags = merge(var.tags, {
     Name        = "${var.environment}-app-instance-${count.index + 1}"
     Environment = var.environment
-  }
+    AutoStop    = var.instance_state == "stopped" ? "true" : "false"
+  })
 }
 
-# Stop instances if desired state is stopped
+# Handle instance state
 resource "null_resource" "instance_state" {
   count = var.instance_state == "stopped" ? var.instance_count : 0
 
@@ -47,8 +54,11 @@ resource "null_resource" "instance_state" {
   }
 
   provisioner "local-exec" {
-    command = "aws ec2 stop-instances --instance-ids ${aws_instance.app_instances[count.index].id}"
+    command = "aws configure set region ${data.aws_region.current.name} && aws ec2 stop-instances --instance-ids ${aws_instance.app_instances[count.index].id}"
   }
 
   depends_on = [aws_instance.app_instances]
 }
+
+# Get current region
+data "aws_region" "current" {}

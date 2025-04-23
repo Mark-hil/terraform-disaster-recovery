@@ -52,3 +52,25 @@ output "s3_bucket_domain_name" {
   description = "S3 bucket domain name"
   value       = module.primary_s3.s3_bucket_domain_name
 }
+
+# ALB outputs
+output "alb_listener_arn" {
+  description = "ARN of the ALB listener"
+  value       = module.alb.listener_arn
+}
+
+output "alb_target_group_arn" {
+  description = "ARN of the primary ALB target group"
+  value       = module.alb.target_group_arn
+}
+
+output "alb_dns_name" {
+  description = "DNS name of the ALB"
+  value       = module.alb.alb_dns_name
+}
+
+# EC2 outputs
+output "primary_instance_id" {
+  description = "ID of the primary EC2 instance"
+  value       = module.primary_ec2.instance_ids[0]
+}

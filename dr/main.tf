@@ -100,54 +100,8 @@ resource "aws_iam_role_policy" "ec2_policy" {
   })
 }
 
-# Phase 4: Create EC2 instances
-module "dr_ec2" {
-  source = "../modules/ec2"
-  providers = {
-    aws = aws
-  }
-
-  environment           = var.environment
-  vpc_id               = module.vpc.vpc_id
-  subnet_ids           = module.vpc.public_subnet_ids
-  instance_type        = "t3.micro"
-  instance_count       = 1
-  instance_state       = "stopped"  # DR instance starts stopped to save costs
-  security_group_ids   = [module.security_group.app_security_group_id]
-  instance_profile_name = aws_iam_instance_profile.ec2_profile.name
-
-  # Docker configuration - same as primary for consistency
-  docker_image    = "nginx:latest"
-  container_port  = 80
-  host_port       = 80
-
-  tags = merge(var.tags, {
-    Environment = var.environment
-    Region      = "DR"
-    Name        = "${var.environment}-${var.project_name}-app-instance-1"
-  })
-}
-
-# Phase 5: Create CloudWatch alarms and dashboard
-module "cloudwatch" {
-  source = "../modules/cloudwatch"
-  providers = {
-    aws = aws.dr
-    aws.primary = aws.primary
-    aws.dr = aws.dr
-    aws.dr_region = aws.dr
-  }
-
-  project_name = var.project_name
-  environment = var.environment
-  region = var.aws_region
-  alarm_topic_arns = []
-
-  tags = var.tags
-}
-
 # Network configuration
-module "vpc" {
+module "dr_vpc" {
   source = "../modules/network"
   providers = {
     aws = aws.dr
@@ -165,19 +119,17 @@ module "vpc" {
   tags = var.tags
 }
 
-# Security Group
+# First create security groups
 module "security_group" {
   source = "../modules/security"
   providers = {
     aws = aws.dr
-    aws.primary = aws.primary
-    aws.dr = aws.dr
-    aws.dr_region = aws.dr
   }
 
-  vpc_id       = module.vpc.vpc_id
+  vpc_id       = module.dr_vpc.vpc_id
   environment  = var.environment
   project_name = var.project_name
+  alb_security_group_id = null
 
   tags = merge(var.tags, {
     Environment = var.environment
@@ -185,21 +137,156 @@ module "security_group" {
   })
 }
 
-# Application Load Balancer
-module "alb" {
+# Then create ALB
+module "dr_alb" {
   source = "../modules/alb"
+  project_name = var.project_name
   providers = {
     aws = aws.dr
   }
 
+  name        = "${var.environment}-${var.project_name}-dr"
+  vpc_id      = module.dr_vpc.vpc_id
   environment = var.environment
-  name        = "${var.environment}-${var.project_name}-app"
-  vpc_id      = module.vpc.vpc_id
-  subnet_ids  = module.vpc.public_subnet_ids
-  instance_ids = module.dr_ec2.instance_ids
+  subnet_ids  = module.dr_vpc.public_subnet_ids
+  target_security_group_ids = [module.security_group.app_security_group_id]
 
   tags = merge(var.tags, {
     Environment = var.environment
     Region      = "DR"
   })
+}
+
+# Update security group with ALB security group ID
+resource "aws_security_group_rule" "alb_to_app" {
+  provider                 = aws.dr
+  type                    = "ingress"
+  from_port               = 80
+  to_port                 = 80
+  protocol                = "tcp"
+  source_security_group_id = module.dr_alb.alb_security_group_id
+  security_group_id       = module.security_group.app_security_group_id
+}
+
+# Then create RDS
+module "rds" {
+  source = "../modules/rds"
+  providers = {
+    aws = aws.dr
+  }
+
+  environment = var.environment
+  project_name = var.project_name
+  DB_NAME = var.DB_NAME
+  DB_USER = var.DB_USER
+  DB_PASSWORD = var.DB_PASSWORD
+  vpc_id = module.dr_vpc.vpc_id
+  subnet_ids = module.dr_vpc.private_subnet_ids
+  security_group_ids = [module.security_group.rds_security_group_id]
+  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
+  parameter_group_family = "postgres16"
+  tags = var.tags
+  create_replica = true
+  primary_instance_arn = var.primary_rds_arn
+}
+
+# Finally create EC2 instances
+module "dr_ec2" {
+  source = "../modules/ec2"
+  providers = {
+    aws = aws.dr
+  }
+
+  environment = var.environment
+  project_name = var.project_name
+  vpc_id = module.dr_vpc.vpc_id
+  instance_count = 1
+  instance_type = "t3.micro"
+  subnet_ids = module.dr_vpc.private_subnet_ids
+  security_group_ids = [module.security_group.app_security_group_id]
+  instance_profile_name = aws_iam_instance_profile.ec2_profile.name
+  instance_state = "stopped"
+  root_volume_size = 20
+  DB_NAME = var.DB_NAME
+  DB_USER = var.DB_USER
+  DB_PASSWORD = var.DB_PASSWORD
+  DB_HOST = module.rds.rds_endpoint
+}
+
+# Finally attach EC2 instances to ALB target groups
+resource "aws_lb_target_group_attachment" "app" {
+  provider         = aws.dr
+  count           = length(module.dr_ec2.instance_ids)
+  target_group_arn = module.dr_alb.target_group_arn
+  target_id        = module.dr_ec2.instance_ids[count.index]
+  port            = 80
+}
+
+# AMI Replication
+module "ami_replication" {
+  source = "../modules/ami_replication"
+  providers = {
+    aws = aws.dr
+    aws.dr = aws.dr
+  }
+
+  environment = var.environment
+  project_name = var.project_name
+  primary_region = var.primary_region
+  dr_region = var.dr_region
+  source_instance_id = var.primary_instance_id
+  primary_instance_id = var.primary_instance_id
+  env_vars = jsonencode({
+    FRONTEND_IMAGE = "markhill97/chat-app-frontend:latest"
+    BACKEND_IMAGE  = "markhill97/chat-app-backend:latest"
+    FRONTEND_PORT  = "3000"
+    BACKEND_PORT   = "8000"
+  })
+  tags = var.tags
+}
+
+# Lambda Failover
+module "lambda_failover" {
+  source = "../modules/lambda_failover"
+  providers = {
+    aws = aws.dr
+    aws.dr = aws.dr
+  }
+
+  environment = var.environment
+  project_name = var.project_name
+  primary_region = var.primary_region
+  dr_region = var.aws_region
+  primary_ec2_ids = var.primary_instance_ids
+  dr_ec2_ids = module.dr_ec2.instance_ids
+  dr_rds_identifier = module.rds.dr_id
+  primary_alb_arn = var.primary_alb_arn
+  dr_alb_arn = module.dr_alb.alb_arn
+  primary_target_group_arn = var.primary_target_group_arn
+  dr_target_group_arn = module.dr_alb.target_group_arn
+  primary_rds_id = var.primary_rds_id
+  notification_topic_arn = var.notification_topic_arn
+
+  tags = var.tags
+}
+
+# CloudWatch alarms and dashboard
+module "cloudwatch" {
+  source = "../modules/cloudwatch"
+  providers = {
+    aws = aws.dr
+  }
+
+  primary_instance_id = module.dr_ec2.instance_ids[0]
+  primary_rds_id = module.rds.dr_id
+  environment = var.environment
+  project_name = var.project_name
+  region = var.aws_region
+  lambda_function_arn = module.lambda_failover.function_arn
+  lambda_function_name = module.lambda_failover.function_name
+  alarm_topic_arns = []
+  primary_region = var.primary_region
+  dr_region = var.aws_region
+  dr_rds_id = module.rds.dr_id
+  tags = var.tags
 }

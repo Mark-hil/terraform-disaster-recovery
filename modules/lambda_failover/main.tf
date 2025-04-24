@@ -119,6 +119,7 @@ resource "aws_lambda_function" "dr_failover" {
       DR_REGION             = var.dr_region
       PRIMARY_RDS_ID        = var.primary_rds_id
       DR_RDS_ID             = var.dr_rds_identifier
+      NOTIFICATION_TOPIC_ARN = var.notification_topic_arn
     }
   }
 

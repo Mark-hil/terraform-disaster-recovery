@@ -1,16 +1,16 @@
 output "vpc_id" {
   description = "ID of the DR VPC"
-  value       = module.vpc.vpc_id
+  value       = module.dr_vpc.vpc_id
 }
 
 output "private_subnet_ids" {
   description = "IDs of private subnets in DR VPC"
-  value       = module.vpc.private_subnet_ids
+  value       = module.dr_vpc.private_subnet_ids
 }
 
 output "public_subnet_ids" {
   description = "IDs of public subnets in DR VPC"
-  value       = module.vpc.public_subnet_ids
+  value       = module.dr_vpc.public_subnet_ids
 }
 
 # RDS outputs are now provided by the primary module since we're using cross-region replication
@@ -42,10 +42,10 @@ output "dr_instance_id" {
 # ALB outputs
 output "dr_target_group_arn" {
   description = "ARN of the DR ALB target group"
-  value       = module.alb.target_group_arn
+  value       = module.dr_alb.target_group_arn
 }
 
 output "dr_alb_arn" {
   description = "ARN of the DR ALB"
-  value       = module.alb.alb_arn
+  value       = module.dr_alb.alb_arn
 }

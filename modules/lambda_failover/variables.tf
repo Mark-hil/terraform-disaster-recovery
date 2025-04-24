@@ -65,6 +65,11 @@ variable "tags" {
   default     = {}
 }
 
+variable "notification_topic_arn" {
+  description = "ARN of the SNS topic for notifications"
+  type        = string
+}
+
 variable "health_check_schedule" {
   description = "CloudWatch Events schedule expression for health checks"
   type        = string
@@ -75,12 +80,6 @@ variable "failover_threshold" {
   description = "Number of consecutive health check failures before triggering failover"
   type        = number
   default     = 3
-}
-
-variable "notification_topic_arn" {
-  description = "ARN of the SNS topic for failover notifications"
-  type        = string
-  default     = ""
 }
 
 variable "primary_rds_id" {

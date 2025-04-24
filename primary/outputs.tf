@@ -38,6 +38,11 @@ output "rds_database_name" {
   value       = module.primary_rds.rds_database_name
 }
 
+output "rds_arn" {
+  description = "ARN of the primary RDS instance"
+  value       = module.primary_rds.rds_arn
+}
+
 output "s3_bucket_arn" {
   description = "S3 bucket ARN"
   value       = module.primary_s3.s3_bucket_arn
@@ -73,4 +78,34 @@ output "alb_dns_name" {
 output "primary_instance_id" {
   description = "ID of the primary EC2 instance"
   value       = module.primary_ec2.instance_ids[0]
+}
+
+output "primary_instance_ids" {
+  description = "List of primary EC2 instance IDs"
+  value       = module.primary_ec2.instance_ids
+}
+
+output "primary_alb_arn" {
+  description = "ARN of the primary ALB"
+  value       = module.alb.alb_arn
+}
+
+output "primary_target_group_arn" {
+  description = "ARN of the primary target group"
+  value       = module.alb.target_group_arn
+}
+
+output "primary_rds_id" {
+  description = "ID of the primary RDS instance"
+  value       = module.primary_rds.primary_id
+}
+
+output "primary_rds_arn" {
+  description = "ARN of the primary RDS instance"
+  value       = module.primary_rds.primary_instance_arn
+}
+
+output "notification_topic_arn" {
+  description = "ARN of the SNS notification topic"
+  value       = module.sns.topic_arn
 }

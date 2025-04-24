@@ -5,6 +5,13 @@ resource "aws_sns_topic" "dr_alerts" {
   name = "${var.environment}-${var.region}-dr-alerts"
 }
 
+# Email subscription for alerts
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.dr_alerts.arn
+  protocol  = "email"
+  endpoint  = "chillop.learn@gmail.com"
+}
+
 # SNS Topic Policy
 resource "aws_sns_topic_policy" "dr_alerts" {
   arn = aws_sns_topic.dr_alerts.arn
@@ -25,21 +32,39 @@ resource "aws_sns_topic_policy" "dr_alerts" {
   })
 }
 
-# EC2 CPU Utilization Alarm
-resource "aws_cloudwatch_metric_alarm" "ec2_cpu" {
-  alarm_name          = "${var.environment}-${var.region}-ec2-cpu-alarm"
+# EC2 Status Check Alarm
+resource "aws_cloudwatch_metric_alarm" "primary_ec2_status" {
+  alarm_name          = "${var.environment}-${var.region}-primary-ec2-status-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "CPUUtilization"
+  metric_name        = "StatusCheckFailed"
   namespace          = "AWS/EC2"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "80"
-  alarm_description  = "This metric monitors EC2 CPU utilization"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn]
+  period             = "60"
+  statistic          = "Maximum"
+  threshold          = "0"
+  alarm_description  = "This metric monitors EC2 status checks"
+  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
 
   dimensions = {
-    InstanceId = "*"
+    InstanceId = var.primary_instance_id
+  }
+}
+
+# RDS Status Check Alarm
+resource "aws_cloudwatch_metric_alarm" "primary_rds_status" {
+  alarm_name          = "${var.environment}-${var.region}-primary-rds-status-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name        = "StatusCheckFailed"
+  namespace          = "AWS/RDS"
+  period             = "60"
+  statistic          = "Maximum"
+  threshold          = "0"
+  alarm_description  = "This metric monitors RDS status checks"
+  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = var.primary_rds_id
   }
 }
 
@@ -58,6 +83,24 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
 
   dimensions = {
     DBInstanceIdentifier = "*"
+  }
+}
+
+# EC2 Status Check Alarm - Triggers failover
+resource "aws_cloudwatch_metric_alarm" "ec2_status" {
+  alarm_name          = "${var.environment}-${var.region}-ec2-status-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name        = "StatusCheckFailed"
+  namespace          = "AWS/EC2"
+  period             = "60"  # Check every minute
+  statistic          = "Maximum"
+  threshold          = "0"
+  alarm_description  = "This metric monitors EC2 status checks and triggers DR failover"
+  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
+
+  dimensions = {
+    InstanceId = "*"
   }
 }
 

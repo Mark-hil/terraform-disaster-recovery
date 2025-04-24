@@ -11,22 +11,28 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "db_password" {
-  description = "Password for the RDS instance"
+variable "DB_PASSWORD" {
+  description = "Password for RDS instance"
   type        = string
   sensitive   = true
+  default     = "postgres"
 }
 
-variable "db_username" {
-  description = "Username for the RDS instance"
+variable "DB_USER" {
+  description = "Username for RDS instance"
   type        = string
-  default     = "admin"
 }
 
-variable "db_host" {
-  description = "Hostname for the RDS instance"
+variable "DB_HOST" {
+  description = "Hostname for RDS instance"
   type        = string
-  default     = "awsdrprojectdb"
+  default     = ""  # Will be set by RDS module
+}
+
+variable "DB_NAME" {
+  description = "Name of the database"
+  type        = string
+  default     = "chat_db"
 }
 
 # Region Settings

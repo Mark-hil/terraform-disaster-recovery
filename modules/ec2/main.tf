@@ -1,4 +1,4 @@
-# Latest Amazon Linux 2 AMI
+# Get the latest Amazon Linux 2 AMI
 data "aws_ami" "amazon_linux_2" {
   most_recent = true
   owners      = ["amazon"]
@@ -7,18 +7,20 @@ data "aws_ami" "amazon_linux_2" {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
+}
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+# Get the latest DR AMI ID from SSM Parameter Store if it exists
+data "aws_ssm_parameter" "dr_ami" {
+  count = var.dr_ami_parameter != "" ? 1 : 0
+  name  = var.dr_ami_parameter
+  with_decryption = true
 }
 
 # EC2 Instances
 resource "aws_instance" "app_instances" {
   count = var.instance_count
 
-  ami           = data.aws_ami.amazon_linux_2.id
+  ami           = var.dr_ami_parameter != "" ? try(data.aws_ssm_parameter.dr_ami[0].value, data.aws_ami.amazon_linux_2.id) : data.aws_ami.amazon_linux_2.id
   instance_type = var.instance_type
 
   subnet_id                   = var.subnet_ids[count.index % length(var.subnet_ids)]
@@ -27,13 +29,20 @@ resource "aws_instance" "app_instances" {
   associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/templates/user_data.sh.tpl", {
-    docker_image    = var.docker_image
-    container_port  = var.container_port
-    host_port       = var.host_port
+    environment = var.environment
+    project_name = var.project_name
+    frontend_image = var.frontend_image
+    backend_image  = var.backend_image
+    frontend_port  = var.frontend_port
+    backend_port   = var.backend_port
+    DB_HOST = var.DB_HOST
+    DB_NAME = var.DB_NAME
+    DB_USER = var.DB_USER
+    DB_PASSWORD = var.DB_PASSWORD
   })
 
   root_block_device {
-    volume_size = var.root_volume_size
+    volume_size = 10
     volume_type = "gp2"
     encrypted   = true
   }

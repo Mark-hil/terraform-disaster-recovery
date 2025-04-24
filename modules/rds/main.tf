@@ -1,38 +1,49 @@
-# Random password for RDS master user
-resource "random_password" "master_password" {
-  length  = 16
-  special = true
-  # Exclude characters that might cause issues
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
-
 # RDS Subnet Group
 resource "aws_db_subnet_group" "primary" {
-  name       = "${var.environment}-${var.database_name}-subnet-group"
+  name       = "${var.environment}-${var.project_name}-subnet-group"
   subnet_ids = var.subnet_ids
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.project_name}-subnet-group"
+  })
 }
 
 # RDS Parameter Group
 resource "aws_db_parameter_group" "primary" {
   name        = "${var.environment}-primary-db-params"
   family      = var.parameter_group_family
-  description = "Parameter group for primary RDS instance"
+  description = "Primary DB parameter group"
 
   parameter {
-    name  = "max_connections"
-    value = "1000"
+    name  = "client_encoding"
+    value = "utf8"
   }
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-primary-db-params"
+  })
+}
+
+# Random password for RDS master user
+resource "random_password" "master_password" {
+  count   = var.create_replica ? 0 : 1
+  length  = 16
+  special = true
 }
 
 # Security Group for RDS
 resource "aws_security_group" "rds" {
-  name        = "${var.environment}-${var.database_name}-rds-sg"
+  name        = "${var.environment}-${var.project_name}-rds-sg"
   description = "Security group for RDS instance"
   vpc_id      = var.vpc_id
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   ingress {
-    from_port       = 3306
-    to_port         = 3306
+    from_port       = 5432
+    to_port         = 5432
     protocol        = "tcp"
     security_groups = var.security_group_ids
   }
@@ -45,51 +56,78 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# Primary RDS Instance
+# Primary RDS instance
 resource "aws_db_instance" "primary" {
-  identifier           = lower("${var.environment}-${var.database_name}")
-  instance_class      = "db.t3.micro"
-  allocated_storage    = 20
-  storage_type        = "gp2"
-  engine              = "mysql"
-  engine_version      = "8.0"
-  db_name             = var.database_name
-  username            = var.db_username
-  password            = var.db_password
-  skip_final_snapshot = true
-  multi_az            = false  # Disable Multi-AZ for cost savings
-  
+  count                   = var.create_replica ? 0 : 1
+  identifier             = "${var.environment}-${var.project_name}db"
+  engine               = "postgres"
+  engine_version       = "16.8"
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  storage_type           = "gp2"
+  username               = var.DB_USER
+  password               = coalesce(var.DB_PASSWORD, random_password.master_password[0].result)
+  db_name                = var.DB_NAME
+  db_subnet_group_name   = aws_db_subnet_group.primary.name
+  parameter_group_name   = aws_db_parameter_group.primary.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  skip_final_snapshot    = true
+  monitoring_interval    = 60
+  monitoring_role_arn    = var.monitoring_role_arn
+  multi_az              = false
+  publicly_accessible   = false
+  backup_retention_period = 7
+  backup_window         = "03:00-04:00"
+  maintenance_window    = "Mon:04:00-Mon:05:00"
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.project_name}db"
+  })
+}
+
+# Read replica in DR region
+resource "aws_db_instance" "dr_replica" {
+  count = var.create_replica ? 1 : 0
+  identifier             = "${var.environment}-${var.project_name}db-dr-replica"
+  instance_class         = "db.t3.micro"
+  storage_type           = "gp2"
+  allocated_storage      = 20
+  replicate_source_db    = var.primary_instance_arn
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.primary.name
   parameter_group_name   = aws_db_parameter_group.primary.name
+  monitoring_interval    = 60
+  monitoring_role_arn    = var.monitoring_role_arn
+  multi_az              = false
+  publicly_accessible    = false
+  auto_minor_version_upgrade = false
 
-  backup_retention_period = 7
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "Mon:04:00-Mon:05:00"
-
-  monitoring_interval = 60  # Changed from 300 to 60 as it's the maximum allowed value
-  monitoring_role_arn = var.monitoring_role_arn
-
-  enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${var.project_name}db-dr-replica"
+  })
 }
 
-# DR Region Read Replica
-resource "aws_db_instance" "dr_replica" {
-  provider = aws.dr_region
+# Store database information in SSM Parameter Store
+resource "aws_ssm_parameter" "db_endpoint" {
+  name  = "/dr/${var.environment}/${var.project_name}/database/endpoint"
+  type  = "String"
+  value = var.create_replica ? aws_db_instance.dr_replica[0].endpoint : aws_db_instance.primary[0].endpoint
+}
 
-  identifier           = lower("${var.environment}-${var.database_name}-dr-replica")
-  instance_class      = "db.t3.micro"
-  replicate_source_db = aws_db_instance.primary.arn
-  skip_final_snapshot = true
+resource "aws_ssm_parameter" "db_name" {
+  name  = "/dr/${var.environment}/${var.project_name}/database/name"
+  type  = "String"
+  value = var.DB_NAME
+}
 
-  backup_retention_period = 0
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "Mon:04:00-Mon:05:00"
+resource "aws_ssm_parameter" "db_username" {
+  name  = "/dr/${var.environment}/${var.project_name}/database/username"
+  type  = "String"
+  value = var.DB_USER
+}
 
-  monitoring_interval = 60  # Changed from 300 to 60 as it's the maximum allowed value
-  monitoring_role_arn = var.monitoring_role_arn
-
-  enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
-
-  depends_on = [aws_db_instance.primary]
+resource "aws_ssm_parameter" "db_password" {
+  name  = "/dr/${var.environment}/${var.project_name}/database/password"
+  type  = "SecureString"
+  value = var.create_replica ? var.DB_PASSWORD : coalesce(var.DB_PASSWORD, random_password.master_password[0].result)
 }

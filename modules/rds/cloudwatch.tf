@@ -14,7 +14,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
   ok_actions          = []
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.primary.id
+    DBInstanceIdentifier = var.create_replica ? aws_db_instance.dr_replica[0].id : aws_db_instance.primary[0].id
   }
 
   tags = {
@@ -36,7 +36,7 @@ resource "aws_cloudwatch_metric_alarm" "free_storage_space" {
   ok_actions          = []
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.primary.id
+    DBInstanceIdentifier = var.create_replica ? aws_db_instance.dr_replica[0].id : aws_db_instance.primary[0].id
   }
 
   tags = {
@@ -58,7 +58,7 @@ resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
   ok_actions          = []
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.primary.id
+    DBInstanceIdentifier = var.create_replica ? aws_db_instance.dr_replica[0].id : aws_db_instance.primary[0].id
   }
 
   tags = {

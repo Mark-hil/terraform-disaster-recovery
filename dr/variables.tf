@@ -4,30 +4,40 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment name (e.g., prod, dev)"
   type        = string
 }
 
-variable "db_password" {
-  description = "Password for the RDS instance"
+variable "DB_PASSWORD" {
+  description = "Password for RDS instance"
   type        = string
   sensitive   = true
+  default     = "postgres"
 }
 
-variable "db_username" {
-  description = "Username for the RDS instance"
+variable "DB_USER" {
+  description = "Username for RDS instance"
   type        = string
 }
 
-variable "db_host" {
-  description = "Hostname for the RDS instance"
+variable "DB_HOST" {
+  description = "Hostname for RDS instance"
   type        = string
+  default     = ""  # Will be set by RDS module
+}
+
+variable "DB_NAME" {
+  description = "Name of the database"
+  type        = string
+  default     = "chat_db"
 }
 
 variable "primary_region" {
-  description = "AWS region for primary resources"
+  description = "AWS region for primary infrastructure"
   type        = string
 }
+
+
 
 variable "dr_region" {
   description = "AWS region for DR resources"
@@ -35,12 +45,12 @@ variable "dr_region" {
 }
 
 variable "vpc_cidr" {
-  description = "CIDR block for DR VPC"
+  description = "CIDR block for VPC"
   type        = string
 }
 
 variable "availability_zones" {
-  description = "List of availability zones in DR region"
+  description = "List of availability zones"
   type        = list(string)
 }
 
@@ -55,7 +65,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of KMS key for RDS encryption"
+  description = "ARN of KMS key for encryption"
   type        = string
   default     = null
 }
@@ -79,12 +89,47 @@ variable "primary_s3_arn" {
 }
 
 variable "aws_region" {
-  description = "AWS region for DR resources"
+  description = "AWS region for DR infrastructure"
   type        = string
 }
 
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
+}
+
+variable "primary_instance_id" {
+  description = "ID of the primary EC2 instance"
+  type        = string
+}
+
+variable "primary_instance_ids" {
+  description = "List of primary EC2 instance IDs"
+  type        = list(string)
+}
+
+variable "primary_alb_arn" {
+  description = "ARN of the primary ALB"
+  type        = string
+}
+
+variable "primary_target_group_arn" {
+  description = "ARN of the primary target group"
+  type        = string
+}
+
+variable "primary_rds_id" {
+  description = "ID of the primary RDS instance"
+  type        = string
+}
+
+variable "primary_rds_arn" {
+  description = "ARN of the primary RDS instance to create read replica from"
+  type        = string
+}
+
+variable "notification_topic_arn" {
+  description = "ARN of the SNS topic for notifications"
+  type        = string
 }

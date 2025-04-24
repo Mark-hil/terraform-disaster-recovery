@@ -3,17 +3,22 @@ variable "environment" {
   type        = string
 }
 
-variable "database_name" {
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
+variable "DB_NAME" {
   description = "Name of the database"
   type        = string
 }
 
-variable "db_username" {
+variable "DB_USER" {
   description = "Username for the database"
   type        = string
 }
 
-variable "db_password" {
+variable "DB_PASSWORD" {
   description = "Password for the database"
   type        = string
   sensitive   = true
@@ -39,6 +44,18 @@ variable "monitoring_role_arn" {
   type        = string
 }
 
+variable "instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "storage_size" {
+  description = "RDS storage size"
+  type        = number
+  default     = 20
+}
+
 variable "parameter_group_family" {
   description = "DB parameter group family"
   type        = string
@@ -49,4 +66,16 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
+}
+
+variable "create_replica" {
+  description = "Whether to create a read replica"
+  type        = bool
+  default     = false
+}
+
+variable "primary_instance_arn" {
+  description = "ARN of the primary RDS instance to create read replica from"
+  type        = string
+  default     = ""
 }

@@ -13,6 +13,18 @@ variable "region" {
   type        = string
 }
 
+variable "primary_instance_id" {
+  description = "ID of the primary EC2 instance"
+  type        = string
+}
+
+variable "primary_rds_id" {
+  description = "ID of the primary RDS instance"
+  type        = string
+}
+
+
+
 variable "alarm_topic_arns" {
   description = "List of SNS topic ARNs for alarms"
   type        = list(string)
@@ -22,7 +34,11 @@ variable "alarm_topic_arns" {
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
-  default     = {}
+}
+
+variable "lambda_function_arn" {
+  description = "ARN of the Lambda function to trigger for DR failover"
+  type        = string
 }
 
 variable "primary_region" {

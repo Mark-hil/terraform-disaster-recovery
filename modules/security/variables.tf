@@ -13,8 +13,14 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "allowed_cidr_blocks" {
-  description = "List of CIDR blocks allowed to access the application"
+variable "alb_security_group_id" {
+  description = "ID of the ALB security group"
+  type        = string
+  default     = null  # Make it optional
+}
+
+variable "ssh_allowed_cidr_blocks" {
+  description = "List of CIDR blocks allowed to access the instances via SSH"
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }

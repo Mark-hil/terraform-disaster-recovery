@@ -24,6 +24,11 @@ variable "environment" {
   type        = string
 }
 
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "instance_state" {
   description = "Desired state of the instances (running or stopped)"
   type        = string
@@ -56,20 +61,53 @@ variable "tags" {
   default     = {}
 }
 
-variable "docker_image" {
-  description = "Docker image to run on the instances"
+variable "dr_ami_parameter" {
+  description = "SSM parameter name for DR AMI"
   type        = string
-  default     = "nginx:latest"
+  default     = ""
 }
 
-variable "container_port" {
-  description = "Port that the Docker container listens on"
-  type        = number
-  default     = 80
+variable "frontend_image" {
+  description = "Docker image for the frontend container"
+  type        = string
+  default     = "markhill97/chat-frontend:1.0"
 }
 
-variable "host_port" {
-  description = "Port on the host to map to the container"
+variable "backend_image" {
+  description = "Docker image for the backend container"
+  type        = string
+  default     = "markhill97/chat-backend:1.0"
+}
+
+variable "frontend_port" {
+  description = "Port for the frontend container"
   type        = number
-  default     = 80
+  default     = 3000
+}
+
+variable "backend_port" {
+  description = "Port for backend service"
+  type        = number
+  default     = 8000
+}
+
+variable "DB_HOST" {
+  description = "Database host"
+  type        = string
+}
+
+variable "DB_NAME" {
+  description = "Database name"
+  type        = string
+}
+
+variable "DB_USER" {
+  description = "Database username"
+  type        = string
+}
+
+variable "DB_PASSWORD" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
 }

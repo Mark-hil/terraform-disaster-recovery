@@ -1,13 +1,11 @@
 variable "DB_NAME" {
   description = "Name of the database"
   type        = string
-  default     = "chat_db"
 }
 
 variable "DB_USER" {
   description = "Username for the database"
   type        = string
-  default     = "postgres"
 }
 
 variable "DB_PASSWORD" {
@@ -20,7 +18,7 @@ variable "DB_PASSWORD" {
 variable "DB_HOST" {
   description = "Hostname for RDS instance"
   type        = string
-  default     = ""  # Will be set by RDS module
+  default     = "" # Will be set by RDS module
 }
 
 variable "instance_class" {
@@ -30,7 +28,7 @@ variable "instance_class" {
 }
 
 variable "allocated_storage" {
-  description = "Allocated storage for RDS (in GB)"
+  description = "Allocated storage for RDS in GB"
   type        = number
   default     = 100
 }
@@ -38,31 +36,27 @@ variable "allocated_storage" {
 variable "engine_version" {
   description = "Engine version for RDS"
   type        = string
-  default     = "16.8"  # Updated to match PostgreSQL version
+  default     = "8.0"
 }
 
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "aws-dr-project"
 }
 
 variable "primary_region" {
   description = "AWS region for primary infrastructure"
   type        = string
-  default     = "eu-west-1"
 }
 
 variable "dr_region" {
   description = "AWS region for DR resources"
   type        = string
-  default     = "us-east-1"
 }
 
 variable "environment" {
   description = "Environment name (e.g., prod, dev)"
   type        = string
-  default     = "prod"
 }
 
 variable "ssh_allowed_cidr_blocks" {
@@ -119,16 +113,17 @@ variable "dr_kms_key_arn" {
   default     = null
 }
 
+variable "db_password" {
+  description = "Password for RDS instance"
+  type        = string
+  sensitive   = true
+  default     = "postgres"
+}
+
 variable "dr_instance_id" {
   description = "ID of the DR instance"
   type        = string
-  default     = null
-}
-
-variable "dr_rds_arn" {
-  description = "ARN of the DR RDS instance"
-  type        = string
-  default     = ""  # Will be set by DR module
+  default     = ""
 }
 
 variable "private_subnets" {
@@ -158,13 +153,13 @@ variable "alb_certificate_arn" {
 variable "dr_alb_arn" {
   description = "ARN of the DR ALB"
   type        = string
-  default     = ""  # Will be set by DR module
+  default     = "" # Will be set by DR module
 }
 
 variable "dr_target_group_arn" {
   description = "ARN of the DR target group"
   type        = string
-  default     = ""  # Will be set by DR module
+  default     = "" # Will be set by DR module
 }
 
 variable "aws_region" {
@@ -195,4 +190,16 @@ variable "lambda_function_name" {
   description = "Name of the Lambda function for failover"
   type        = string
   default     = ""
+}
+
+variable "instance_count" {
+  description = "Number of EC2 instances to create"
+  type        = number
+  default     = 1
+}
+
+variable "root_volume_size" {
+  description = "Size of the root volume in GB"
+  type        = number
+  default     = 20
 }

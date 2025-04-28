@@ -14,9 +14,12 @@ resource "aws_db_parameter_group" "primary" {
   family      = var.parameter_group_family
   description = "Primary DB parameter group"
 
+
+
   parameter {
-    name  = "client_encoding"
-    value = "utf8"
+    name         = "max_connections"
+    value        = "100"
+    apply_method = "pending-reboot"
   }
 
   tags = merge(var.tags, {
@@ -58,27 +61,27 @@ resource "aws_security_group" "rds" {
 
 # Primary RDS instance
 resource "aws_db_instance" "primary" {
+  skip_final_snapshot     = true
   count                   = var.create_replica ? 0 : 1
-  identifier             = "${var.environment}-${var.project_name}db"
-  engine               = "postgres"
-  engine_version       = "16.8"
-  instance_class         = "db.t3.micro"
-  allocated_storage      = 20
-  storage_type           = "gp2"
-  username               = var.DB_USER
-  password               = coalesce(var.DB_PASSWORD, random_password.master_password[0].result)
-  db_name                = var.DB_NAME
-  db_subnet_group_name   = aws_db_subnet_group.primary.name
-  parameter_group_name   = aws_db_parameter_group.primary.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  skip_final_snapshot    = true
-  monitoring_interval    = 60
-  monitoring_role_arn    = var.monitoring_role_arn
-  multi_az              = false
-  publicly_accessible   = false
+  identifier              = "${var.environment}-${var.project_name}db"
+  engine                  = "postgres"
+  engine_version          = "16.8"
+  instance_class          = "db.t3.micro"
+  allocated_storage       = 20
+  storage_type            = "gp2"
+  username                = var.DB_USER
+  password                = coalesce(var.DB_PASSWORD, random_password.master_password[0].result)
+  db_name                 = var.DB_NAME
+  db_subnet_group_name    = aws_db_subnet_group.primary.name
+  parameter_group_name    = aws_db_parameter_group.primary.name
+  vpc_security_group_ids  = [aws_security_group.rds.id]
+  monitoring_interval     = var.monitoring_interval
+  monitoring_role_arn     = var.monitoring_role_arn
+  multi_az                = false
+  publicly_accessible     = false
   backup_retention_period = 7
-  backup_window         = "03:00-04:00"
-  maintenance_window    = "Mon:04:00-Mon:05:00"
+  backup_window           = "03:00-04:00"
+  maintenance_window      = "Mon:04:00-Mon:05:00"
 
   tags = merge(var.tags, {
     Name = "${var.environment}-${var.project_name}db"
@@ -87,20 +90,19 @@ resource "aws_db_instance" "primary" {
 
 # Read replica in DR region
 resource "aws_db_instance" "dr_replica" {
-  count = var.create_replica ? 1 : 0
-  identifier             = "${var.environment}-${var.project_name}db-dr-replica"
-  instance_class         = "db.t3.micro"
-  storage_type           = "gp2"
-  allocated_storage      = 20
-  replicate_source_db    = var.primary_instance_arn
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  db_subnet_group_name   = aws_db_subnet_group.primary.name
-  parameter_group_name   = aws_db_parameter_group.primary.name
-  monitoring_interval    = 60
-  monitoring_role_arn    = var.monitoring_role_arn
-  multi_az              = false
-  publicly_accessible    = false
-  auto_minor_version_upgrade = false
+  skip_final_snapshot        = true
+  count                      = var.create_replica ? 1 : 0
+  identifier                 = "${var.environment}-${var.project_name}db-dr-replica"
+  replicate_source_db        = var.primary_instance_arn
+  instance_class             = "db.t3.micro"
+  vpc_security_group_ids     = [aws_security_group.rds.id]
+  db_subnet_group_name       = aws_db_subnet_group.primary.name
+  parameter_group_name       = aws_db_parameter_group.primary.name
+  monitoring_interval        = var.monitoring_interval
+  monitoring_role_arn        = var.monitoring_role_arn
+  multi_az                   = false
+  publicly_accessible        = false
+  auto_minor_version_upgrade = true
 
   tags = merge(var.tags, {
     Name = "${var.environment}-${var.project_name}db-dr-replica"
@@ -108,26 +110,26 @@ resource "aws_db_instance" "dr_replica" {
 }
 
 # Store database information in SSM Parameter Store
-resource "aws_ssm_parameter" "db_endpoint" {
-  name  = "/dr/${var.environment}/${var.project_name}/database/endpoint"
+resource "aws_ssm_parameter" "DB_HOST" {
+  name  = "/dr/${var.environment}/${var.project_name}/DB_HOST"
   type  = "String"
   value = var.create_replica ? aws_db_instance.dr_replica[0].endpoint : aws_db_instance.primary[0].endpoint
 }
 
-resource "aws_ssm_parameter" "db_name" {
-  name  = "/dr/${var.environment}/${var.project_name}/database/name"
+resource "aws_ssm_parameter" "DB_NAME" {
+  name  = "/dr/${var.environment}/${var.project_name}/DB_NAME"
   type  = "String"
   value = var.DB_NAME
 }
 
-resource "aws_ssm_parameter" "db_username" {
-  name  = "/dr/${var.environment}/${var.project_name}/database/username"
+resource "aws_ssm_parameter" "DB_USER" {
+  name  = "/dr/${var.environment}/${var.project_name}/DB_USER"
   type  = "String"
   value = var.DB_USER
 }
 
-resource "aws_ssm_parameter" "db_password" {
-  name  = "/dr/${var.environment}/${var.project_name}/database/password"
+resource "aws_ssm_parameter" "DB_PASSWORD" {
+  name  = "/dr/${var.environment}/${var.project_name}/DB_PASSWORD"
   type  = "SecureString"
-  value = var.create_replica ? var.DB_PASSWORD : coalesce(var.DB_PASSWORD, random_password.master_password[0].result)
+  value = var.DB_PASSWORD
 }

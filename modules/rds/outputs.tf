@@ -13,19 +13,30 @@ output "rds_endpoint" {
   value       = var.create_replica ? aws_db_instance.dr_replica[0].endpoint : aws_db_instance.primary[0].endpoint
 }
 
-output "rds_port" {
-  description = "The port of the RDS instance"
-  value       = var.create_replica ? aws_db_instance.dr_replica[0].port : aws_db_instance.primary[0].port
-}
+# output "rds_endpoint" {
+#   description = "The connection endpoint for the RDS instance"
+#   value       = var.create_replica ? aws_db_instance.dr_replica[0].endpoint : aws_db_instance.primary[0].endpoint
+# }
 
 output "primary_id" {
-  description = "ID of the primary instance"
+  description = "The ID of the primary RDS instance"
   value       = var.create_replica ? null : aws_db_instance.primary[0].id
 }
 
 output "dr_id" {
-  description = "ID of the DR instance"
+  description = "The ID of the DR RDS instance"
   value       = var.create_replica ? aws_db_instance.dr_replica[0].id : null
+}
+
+# Debug outputs
+output "debug_monitoring_role_arn" {
+  description = "Debug: The monitoring role ARN being used"
+  value       = var.monitoring_role_arn
+}
+
+output "debug_monitoring_interval" {
+  description = "Debug: The monitoring interval being used"
+  value       = var.monitoring_interval
 }
 
 output "rds_username" {
@@ -81,9 +92,4 @@ output "replica_instance_id" {
 output "primary_instance_id" {
   description = "ID of the primary instance"
   value       = var.create_replica ? "" : aws_db_instance.primary[0].id
-}
-
-output "rds_arn" {
-  description = "ARN of the RDS instance"
-  value       = var.create_replica ? aws_db_instance.dr_replica[0].arn : aws_db_instance.primary[0].arn
 }

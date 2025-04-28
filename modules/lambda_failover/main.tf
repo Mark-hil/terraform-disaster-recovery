@@ -7,9 +7,13 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/lambda_function.zip"
 }
 
+locals {
+  lambda_role_name = "${var.environment}-${data.aws_region.current.name}-dr-failover-lambda-role"
+}
+
 # IAM role for Lambda function
 resource "aws_iam_role" "lambda_role" {
-  name = "${var.environment}-dr-failover-lambda-role"
+  name = local.lambda_role_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -27,12 +31,16 @@ resource "aws_iam_role" "lambda_role" {
   tags = {
     Name = "${var.environment}-dr-failover-lambda-role"
   }
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 }
 
 # IAM policy for the Lambda function
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "${var.environment}-dr-failover-lambda-policy"
-  role = aws_iam_role.lambda_role.id
+  role = aws_iam_role.lambda_role.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -110,16 +118,16 @@ resource "aws_lambda_function" "dr_failover" {
 
   environment {
     variables = {
-      PRIMARY_EC2_IDS        = join(",", var.primary_ec2_ids)
-      DR_EC2_IDS             = join(",", var.dr_ec2_ids)
-      ALB_ARN                = var.primary_alb_arn
+      PRIMARY_EC2_IDS          = join(",", var.primary_ec2_ids)
+      DR_EC2_IDS               = join(",", var.dr_ec2_ids)
+      ALB_ARN                  = var.primary_alb_arn
       PRIMARY_TARGET_GROUP_ARN = var.primary_target_group_arn
-      DR_TARGET_GROUP_ARN     = var.dr_target_group_arn
-      PRIMARY_REGION         = var.primary_region
-      DR_REGION             = var.dr_region
-      PRIMARY_RDS_ID        = var.primary_rds_id
-      DR_RDS_ID             = var.dr_rds_identifier
-      NOTIFICATION_TOPIC_ARN = var.notification_topic_arn
+      DR_TARGET_GROUP_ARN      = var.dr_target_group_arn
+      PRIMARY_REGION           = var.primary_region
+      DR_REGION                = var.dr_region
+      PRIMARY_RDS_ID           = var.primary_rds_id
+      DR_RDS_ID                = var.dr_rds_identifier
+      NOTIFICATION_TOPIC_ARN   = var.notification_topic_arn
     }
   }
 
@@ -127,6 +135,8 @@ resource "aws_lambda_function" "dr_failover" {
     Name = "${var.environment}-dr-failover"
   }
 }
+
+data "aws_region" "current" {}
 
 # SNS Topic for alarms
 resource "aws_sns_topic" "failover_alarm" {

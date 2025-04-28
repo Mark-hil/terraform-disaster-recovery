@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Enable logging
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+echo "Starting user data script execution..."
+
 # Update system packages
 yum update -y
 
@@ -20,14 +25,20 @@ chmod +x /usr/local/bin/docker-compose
 mkdir -p /app
 
 # Get RDS endpoint and credentials from SSM Parameter Store
-DB_ENDPOINT=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/database/endpoint" --with-decryption --query "Parameter.Value" --output text)
-DB_NAME=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/database/name" --with-decryption --query "Parameter.Value" --output text)
-DB_USER=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/database/username" --with-decryption --query "Parameter.Value" --output text)
-DB_PASSWORD=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/database/password" --with-decryption --query "Parameter.Value" --output text)
+DB_HOST=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/DB_HOST" --with-decryption --query "Parameter.Value" --output text)
+DB_NAME=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/DB_NAME" --with-decryption --query "Parameter.Value" --output text)
+DB_USER=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/DB_USER" --with-decryption --query "Parameter.Value" --output text)
+DB_PASSWORD=$(aws ssm get-parameter --name "/dr/${environment}/${project_name}/DB_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 
-# Extract host and port from DB_ENDPOINT
-DB_HOST=$(echo $DB_ENDPOINT | cut -d: -f1)
-DB_PORT=$(echo $DB_ENDPOINT | cut -d: -f2)
+# Extract port from DB_HOST if it contains a port, otherwise use default PostgreSQL port
+if [[ $DB_HOST == *:* ]]; then
+    DB_PORT=$(echo $DB_HOST | cut -d: -f2)
+    DB_HOST=$(echo $DB_HOST | cut -d: -f1)
+else
+    DB_PORT=5432
+fi
+
+echo "Using database connection: $DB_HOST:$DB_PORT"
 
 # Get instance metadata
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
@@ -36,7 +47,11 @@ REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
 # Get load balancer DNS name
 ALB_DNS=$(aws elbv2 describe-load-balancers --region $REGION --query 'LoadBalancers[?contains(LoadBalancerArn, `prod-app`)].DNSName' --output text)
 
+# Install netcat for database connection check
+yum install -y nc
+
 # Stop and remove any existing containers
+echo "Stopping and removing existing containers..."
 docker ps -aq | xargs -r docker stop
 docker ps -aq | xargs -r docker rm
 
@@ -91,35 +106,4 @@ aws ec2 create-tags \
   --resources $INSTANCE_ID \
   --tags Key=Status,Value=Ready
 
-# Stop and remove any existing containers
-docker stop $(docker ps -q) || true
-docker rm $(docker ps -aq) || true
-
-# Run frontend container
-docker run -d \
-  --name frontend \
-  -p $frontend_port:3000 \
-  -e REACT_APP_BACKEND_URL=http://localhost:$backend_port \
-  $frontend_image
-
-# Run backend container
-docker run -d \
-  --name backend \
-  -p $backend_port:8000 \
-  -e DB_HOST=$DB_HOST \
-  -e DB_PORT=$DB_PORT \
-  -e DB_NAME=${DB_NAME} \
-  -e DB_USER=${DB_USER} \
-  -e DB_PASSWORD=${DB_PASSWORD} \
-  $backend_image
-  -e DB_NAME=$DB_NAME \
-  -e DB_USER=$DB_USER \
-  -e DB_PASSWORD=$DB_PASSWORD \
-  markhill97/chat-app-backend:latest
-
-# Start the frontend container
-docker run -d --name frontend \
-  -p ${frontend_port}:3000 \
-  -e REACT_APP_BACKEND_URL=http://localhost:${backend_port} \
-  markhill97/chat-app-frontend:latest
-systemctl enable amazon-cloudwatch-agent
+echo "User data script completed successfully"

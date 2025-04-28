@@ -14,28 +14,6 @@ DR_TG_ARN = os.environ['DR_TARGET_GROUP_ARN']
 ALB_ARN = os.environ['ALB_ARN']
 PRIMARY_EC2_IDS = os.environ['PRIMARY_EC2_IDS'].split(',')
 DR_EC2_IDS = os.environ['DR_EC2_IDS'].split(',')
-DR_AMI_SSM_PARAM = os.environ['DR_AMI_SSM_PARAM']
-
-# Initialize AWS clients
-rds_primary = boto3.client('rds', region_name=PRIMARY_REGION)
-rds_dr = boto3.client('rds', region_name=DR_REGION)
-ec2_primary = boto3.client('ec2', region_name=PRIMARY_REGION)
-ec2_dr = boto3.client('ec2', region_name=DR_REGION)
-elb = boto3.client('elbv2', region_name=PRIMARY_REGION)
-elb_dr = boto3.client('elbv2', region_name=DR_REGION)
-ssm = boto3.client('ssm', region_name=DR_REGION)
-sns = boto3.client('sns', region_name=PRIMARY_REGION)
-
-# Environment variables
-PRIMARY_REGION = os.environ['PRIMARY_REGION']
-DR_REGION = os.environ['DR_REGION']
-PRIMARY_RDS_ID = os.environ['PRIMARY_RDS_ID']
-DR_RDS_ID = os.environ['DR_RDS_ID']
-PRIMARY_TG_ARN = os.environ['PRIMARY_TARGET_GROUP_ARN']
-DR_TG_ARN = os.environ['DR_TARGET_GROUP_ARN']
-ALB_ARN = os.environ['ALB_ARN']
-PRIMARY_EC2_IDS = os.environ['PRIMARY_EC2_IDS'].split(',')
-DR_EC2_IDS = os.environ['DR_EC2_IDS'].split(',')
 
 # Initialize AWS clients
 rds_primary = boto3.client('rds', region_name=PRIMARY_REGION)
@@ -93,30 +71,19 @@ def check_ec2_health(region, instance_ids):
 def start_dr_instances():
     """Start DR EC2 instances if they're stopped"""
     try:
-        # Get the latest AMI ID from SSM Parameter Store
-        response = ssm.get_parameter(Name=DR_AMI_SSM_PARAM)
-        ami_id = response['Parameter']['Value']
+        stopped_instances = []
+        response = ec2_dr.describe_instances(InstanceIds=DR_EC2_IDS)
         
-        # Launch new instances with the replicated AMI
-        for instance_id in DR_EC2_IDS:
-            response = ec2_dr.run_instances(
-                ImageId=ami_id,
-                InstanceType='t3.micro',
-                MinCount=1,
-                MaxCount=1,
-                SubnetId=DR_SUBNET_ID,
-                SecurityGroupIds=[DR_SG_ID],
-                TagSpecifications=[{
-                    'ResourceType': 'instance',
-                    'Tags': [{'Key': 'Name', 'Value': f'dr-instance-{instance_id}'}]
-                }]
-            )
-            
-        # Wait for instances to be running
-        waiter = ec2_dr.get_waiter('instance_running')
-        waiter.wait(InstanceIds=DR_EC2_IDS)
+        for reservation in response['Reservations']:
+            for instance in reservation['Instances']:
+                if instance['State']['Name'] == 'stopped':
+                    stopped_instances.append(instance['InstanceId'])
         
-        return True, "DR instances started successfully with replicated AMI"
+        if stopped_instances:
+            ec2_dr.start_instances(InstanceIds=stopped_instances)
+            return True, f"Started DR instances: {', '.join(stopped_instances)}"
+        
+        return True, "All DR instances are already running"
     except Exception as e:
         return False, f"Error starting DR instances: {str(e)}"
 

@@ -40,26 +40,14 @@ variable "security_group_ids" {
 }
 
 variable "monitoring_role_arn" {
-  description = "ARN of the IAM role for RDS monitoring"
+  description = "The ARN for the IAM role that permits RDS to send enhanced monitoring metrics to CloudWatch Logs"
   type        = string
-}
-
-variable "instance_class" {
-  description = "RDS instance class"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "storage_size" {
-  description = "RDS storage size"
-  type        = number
-  default     = 20
 }
 
 variable "parameter_group_family" {
   description = "DB parameter group family"
   type        = string
-  default     = "mysql8.0"
+  default     = "postgres16"
 }
 
 variable "tags" {
@@ -79,3 +67,27 @@ variable "primary_instance_arn" {
   type        = string
   default     = ""
 }
+
+variable "skip_final_snapshot" {
+  description = "Whether to skip final snapshot when destroying the database"
+  type        = bool
+  default     = true
+}
+
+variable "final_snapshot_identifier" {
+  description = "The name of the final snapshot when destroying the database"
+  type        = string
+  default     = null
+}
+
+variable "monitoring_interval" {
+  description = "The interval, in seconds, between points when Enhanced Monitoring metrics are collected. Set to 0 to disable."
+  type        = number
+  default     = 0  # Disable monitoring by default
+}
+
+# variable "monitoring_role_arn" {
+#   description = "The ARN for the IAM role that permits RDS to send enhanced monitoring metrics to CloudWatch Logs"
+#   type        = string
+#   default     = null  # Will be provided when monitoring is enabled
+# }

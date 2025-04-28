@@ -26,7 +26,7 @@ variable "DB_USER" {
 variable "DB_HOST" {
   description = "Hostname for RDS instance"
   type        = string
-  default     = ""  # Will be set by RDS module
+  default     = "" # Will be set by RDS module
 }
 
 variable "DB_NAME" {

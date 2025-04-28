@@ -23,10 +23,10 @@ output "rds_endpoint" {
   value       = module.primary_rds.rds_endpoint
 }
 
-output "rds_port" {
-  description = "RDS port"
-  value       = module.primary_rds.rds_port
-}
+# output "rds_port" {
+#   description = "RDS port"
+#   value       = module.primary_rds.rds_port
+# }
 
 output "rds_username" {
   description = "RDS username"
@@ -38,24 +38,19 @@ output "rds_database_name" {
   value       = module.primary_rds.rds_database_name
 }
 
-output "rds_arn" {
-  description = "ARN of the primary RDS instance"
-  value       = module.primary_rds.rds_arn
-}
-
 output "s3_bucket_arn" {
   description = "S3 bucket ARN"
-  value       = module.primary_s3.s3_bucket_arn
+  value       = module.s3.s3_bucket_arn
 }
 
 output "s3_bucket_id" {
   description = "S3 bucket ID"
-  value       = module.primary_s3.s3_bucket_id
+  value       = module.s3.s3_bucket_id
 }
 
 output "s3_bucket_domain_name" {
   description = "S3 bucket domain name"
-  value       = module.primary_s3.s3_bucket_domain_name
+  value       = module.s3.s3_bucket_domain_name
 }
 
 # ALB outputs

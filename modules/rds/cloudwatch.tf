@@ -30,7 +30,7 @@ resource "aws_cloudwatch_metric_alarm" "free_storage_space" {
   namespace           = "AWS/RDS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "5000000000"  # 5GB in bytes
+  threshold           = "5000000000" # 5GB in bytes
   alarm_description   = "RDS free storage space is too low"
   alarm_actions       = []
   ok_actions          = []
@@ -52,7 +52,7 @@ resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
   namespace           = "AWS/RDS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "1000000000"  # 1GB in bytes
+  threshold           = "1000000000" # 1GB in bytes
   alarm_description   = "RDS freeable memory is too low"
   alarm_actions       = []
   ok_actions          = []

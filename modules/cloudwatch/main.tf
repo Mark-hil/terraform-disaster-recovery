@@ -32,39 +32,21 @@ resource "aws_sns_topic_policy" "dr_alerts" {
   })
 }
 
-# EC2 Status Check Alarm
-resource "aws_cloudwatch_metric_alarm" "primary_ec2_status" {
-  alarm_name          = "${var.environment}-${var.region}-primary-ec2-status-alarm"
+# EC2 CPU Utilization Alarm
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu" {
+  alarm_name          = "${var.environment}-${var.region}-ec2-cpu-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "StatusCheckFailed"
-  namespace          = "AWS/EC2"
-  period             = "60"
-  statistic          = "Maximum"
-  threshold          = "0"
-  alarm_description  = "This metric monitors EC2 status checks"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors EC2 CPU utilization"
+  alarm_actions       = [aws_sns_topic.dr_alerts.arn]
 
   dimensions = {
-    InstanceId = var.primary_instance_id
-  }
-}
-
-# RDS Status Check Alarm
-resource "aws_cloudwatch_metric_alarm" "primary_rds_status" {
-  alarm_name          = "${var.environment}-${var.region}-primary-rds-status-alarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name        = "StatusCheckFailed"
-  namespace          = "AWS/RDS"
-  period             = "60"
-  statistic          = "Maximum"
-  threshold          = "0"
-  alarm_description  = "This metric monitors RDS status checks"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
-
-  dimensions = {
-    DBInstanceIdentifier = var.primary_rds_id
+    InstanceId = "*"
   }
 }
 
@@ -73,13 +55,13 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
   alarm_name          = "${var.environment}-${var.region}-rds-cpu-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "CPUUtilization"
-  namespace          = "AWS/RDS"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "80"
-  alarm_description  = "This metric monitors RDS CPU utilization"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn]
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors RDS CPU utilization"
+  alarm_actions       = [aws_sns_topic.dr_alerts.arn]
 
   dimensions = {
     DBInstanceIdentifier = "*"
@@ -91,13 +73,13 @@ resource "aws_cloudwatch_metric_alarm" "ec2_status" {
   alarm_name          = "${var.environment}-${var.region}-ec2-status-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "StatusCheckFailed"
-  namespace          = "AWS/EC2"
-  period             = "60"  # Check every minute
-  statistic          = "Maximum"
-  threshold          = "0"
-  alarm_description  = "This metric monitors EC2 status checks and triggers DR failover"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/EC2"
+  period              = "60" # Check every minute
+  statistic           = "Maximum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors EC2 status checks and triggers DR failover"
+  alarm_actions       = [aws_sns_topic.dr_alerts.arn, var.lambda_function_arn]
 
   dimensions = {
     InstanceId = "*"
@@ -109,13 +91,13 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage" {
   alarm_name          = "${var.environment}-${var.region}-rds-storage-alarm"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "FreeStorageSpace"
-  namespace          = "AWS/RDS"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "5000000000" # 5GB
-  alarm_description  = "This metric monitors RDS free storage space"
-  alarm_actions      = [aws_sns_topic.dr_alerts.arn]
+  metric_name         = "FreeStorageSpace"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "5000000000" # 5GB
+  alarm_description   = "This metric monitors RDS free storage space"
+  alarm_actions       = [aws_sns_topic.dr_alerts.arn]
 
   dimensions = {
     DBInstanceIdentifier = "*"

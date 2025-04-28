@@ -5,13 +5,13 @@ locals {
   # Common tags
   common_tags = merge(var.tags, {
     Environment = var.environment
-    Region      = "Primary"
+    Region      = "DR"
     ManagedBy   = "terraform"
   })
 
-  # Primary settings
-  primary_instance_type = "t3.micro"  # Cost-effective instance type for primary
-  primary_instance_state = "running"  # Primary instances start in running state
+  # DR settings
+  dr_instance_type = "t3.micro"  # Cost-effective instance type for DR
+  dr_instance_state = "stopped"  # DR instances start in stopped state
   
   # Container settings
   container_images = {

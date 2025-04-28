@@ -11,14 +11,14 @@ data "aws_ami" "amazon_linux_2" {
 
 # Get the latest DR AMI ID from SSM Parameter Store if it exists
 data "aws_ssm_parameter" "dr_ami" {
-  count = var.dr_ami_parameter != "" ? 1 : 0
-  name  = var.dr_ami_parameter
+  count           = var.dr_ami_parameter != "" ? 1 : 0
+  name            = var.dr_ami_parameter
   with_decryption = true
 }
 
 # EC2 Instances
 resource "aws_instance" "app_instances" {
-  count = var.instance_count
+  count                  = var.instance_count
 
   ami           = var.dr_ami_parameter != "" ? try(data.aws_ssm_parameter.dr_ami[0].value, data.aws_ami.amazon_linux_2.id) : data.aws_ami.amazon_linux_2.id
   instance_type = var.instance_type
@@ -29,20 +29,20 @@ resource "aws_instance" "app_instances" {
   associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/templates/user_data.sh.tpl", {
-    environment = var.environment
-    project_name = var.project_name
+    environment    = var.environment
+    project_name   = var.project_name
     frontend_image = var.frontend_image
     backend_image  = var.backend_image
     frontend_port  = var.frontend_port
     backend_port   = var.backend_port
-    DB_HOST = var.DB_HOST
-    DB_NAME = var.DB_NAME
-    DB_USER = var.DB_USER
-    DB_PASSWORD = var.DB_PASSWORD
+    DB_HOST        = var.DB_HOST
+    DB_NAME        = var.DB_NAME
+    DB_USER        = var.DB_USER
+    DB_PASSWORD    = var.DB_PASSWORD
   })
 
   root_block_device {
-    volume_size = 10
+    volume_size = var.root_volume_size
     volume_type = "gp2"
     encrypted   = true
   }
@@ -52,6 +52,15 @@ resource "aws_instance" "app_instances" {
     Environment = var.environment
     AutoStop    = var.instance_state == "stopped" ? "true" : "false"
   })
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = [
+      ami,
+      user_data,
+      user_data_base64
+    ]
+  }
 }
 
 # Handle instance state

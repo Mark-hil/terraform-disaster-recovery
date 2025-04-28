@@ -2,19 +2,9 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 4.0.0"
-      configuration_aliases = [aws.primary, aws.dr]
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.0.0"
-    }
-    archive = {
-      source  = "hashicorp/archive"
-      version = ">= 2.0.0"
+      version = "~> 4.0"
     }
   }
-  required_version = ">= 1.0.0"
 }
 
 # Default provider configuration for primary region

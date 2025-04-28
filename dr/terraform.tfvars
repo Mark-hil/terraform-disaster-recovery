@@ -14,13 +14,13 @@ public_subnets = [
 ]
 
 # RDS Configuration
-DB_NAME = "chat_db"
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
-DB_HOST = "" # This will be populated by RDS endpoint
-instance_class = "db.t3.micro"
+DB_NAME           = "chat_db"
+DB_USER           = "postgres"
+DB_PASSWORD       = "postgres"
+DB_HOST           = "" # This will be populated by RDS endpoint
+instance_class    = "db.t3.micro"
 allocated_storage = 100
-engine_version = "8.0"
+engine_version    = "8.0"
 
 # S3 Configuration
 # bucket_name = "aws-dr-project-replica"
@@ -28,14 +28,14 @@ noncurrent_version_expiration_days = 30
 
 # KMS Configuration
 # These will be replaced by the actual KMS keys created by terraform
-kms_key_arn = ""
+kms_key_arn    = ""
 dr_kms_key_arn = ""
 
 # Common Settings
-environment = "prod"
-dr_region = "us-west-1"
+environment    = "prod"
+dr_region      = "us-west-1"
 primary_region = "eu-west-1"
-project_name = "aws-dr-project"
+project_name   = "aws-dr-project"
 
 # Lambda Failover Settings
 # primary_region = "eu-west-1"

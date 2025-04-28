@@ -1,6 +1,6 @@
 # Project Settings
 project_name = "aws-dr-project"
-environment = "prod"
+environment  = "prod"
 
 # Region Settings
 primary_region = "eu-west-1"
@@ -36,15 +36,15 @@ dr_public_subnet_cidrs = [
   "10.1.102.0/24"
 ]
 
-# RDS Settings
-rds_instance_class = "db.t3.micro"
-rds_allocated_storage = 100
-
 # Database Configuration
-DB_NAME = "chat_db"
-DB_USER = "postgres"
+DB_NAME     = "chat_db"
+DB_USER     = "postgres"
 DB_PASSWORD = "postgres"
-DB_HOST = "" # Will be populated by RDS endpoint
+DB_HOST     = "" # Will be populated by RDS endpoint
+
+# RDS Settings
+rds_instance_class    = "db.t3.micro"
+rds_allocated_storage = 10
 
 # ALB Configuration
 # This will be replaced by your actual certificate ARN

@@ -1,5 +1,5 @@
 variable "instance_count" {
-  description = "Number of instances to create"
+  description = "Number of EC2 instances to create"
   type        = number
   default     = 1
 }
@@ -10,7 +10,7 @@ variable "instance_type" {
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs"
+  description = "List of subnet IDs where EC2 instances will be launched"
   type        = list(string)
 }
 
@@ -20,7 +20,7 @@ variable "vpc_id" {
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment name (e.g., prod, staging)"
   type        = string
 }
 
@@ -30,7 +30,7 @@ variable "project_name" {
 }
 
 variable "instance_state" {
-  description = "Desired state of the instances (running or stopped)"
+  description = "Desired state of the instance (running or stopped)"
   type        = string
   default     = "running"
   validation {
@@ -40,25 +40,31 @@ variable "instance_state" {
 }
 
 variable "security_group_ids" {
-  description = "List of security group IDs to attach to instances"
+  description = "List of security group IDs to attach to EC2 instances"
   type        = list(string)
 }
 
 variable "instance_profile_name" {
-  description = "Name of the IAM instance profile to attach to instances"
+  description = "Name of the IAM instance profile to attach to EC2 instances"
   type        = string
 }
 
 variable "root_volume_size" {
   description = "Size of the root volume in GB"
   type        = number
-  default     = 10
+  default     = 20
 }
 
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
+}
+
+variable "ami_id" {
+  description = "AMI ID to use for the instances. If not provided, latest Amazon Linux 2 will be used."
+  type        = string
+  default     = ""
 }
 
 variable "dr_ami_parameter" {

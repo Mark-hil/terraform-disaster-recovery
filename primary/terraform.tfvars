@@ -14,13 +14,14 @@ public_subnets = [
 ]
 
 # RDS Configuration
-DB_NAME = "chat_db"
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
-DB_HOST = "" # This will be populated by RDS endpoint
-instance_class = "db.t3.micro"
-allocated_storage = 100
-engine_version = "8.0"
+DB_NAME                = "chat_db"
+DB_USER                = "postgres"
+DB_PASSWORD            = "postgres"
+DB_HOST                = "" # This will be populated by RDS endpoint
+instance_class         = "db.t3.micro"
+allocated_storage      = 100
+engine_version         = "16"
+parameter_group_family = "postgres16"
 
 # S3 Configuration
 # bucket_name = "aws-dr-project-primary"
@@ -40,7 +41,7 @@ dr_region = "us-west-1"
 # DNS Settings
 # ALB Configuration
 alb_certificate_arn = ""
-internal_alb = true
+internal_alb        = true
 # dns_name = "db.example.com"
 
 # Monitoring Settings

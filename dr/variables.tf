@@ -23,7 +23,7 @@ variable "DB_USER" {
 variable "DB_HOST" {
   description = "Hostname for RDS instance"
   type        = string
-  default     = ""  # Will be set by RDS module
+  default     = "" # Will be set by RDS module
 }
 
 variable "DB_NAME" {
@@ -36,8 +36,6 @@ variable "primary_region" {
   description = "AWS region for primary infrastructure"
   type        = string
 }
-
-
 
 variable "dr_region" {
   description = "AWS region for DR resources"
@@ -132,4 +130,22 @@ variable "primary_rds_arn" {
 variable "notification_topic_arn" {
   description = "ARN of the SNS topic for notifications"
   type        = string
+}
+
+variable "instance_count" {
+  description = "Number of EC2 instances to create"
+  type        = number
+  default     = 1
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "root_volume_size" {
+  description = "Size of the root volume in GB"
+  type        = number
+  default     = 20
 }

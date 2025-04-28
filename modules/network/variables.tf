@@ -1,10 +1,15 @@
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
+variable "environment" {
+  description = "Environment name (e.g., prod, staging)"
   type        = string
 }
 
-variable "environment" {
-  description = "Environment name"
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
   type        = string
 }
 
@@ -29,7 +34,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
 }

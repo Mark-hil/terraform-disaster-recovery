@@ -19,6 +19,6 @@ output "sns_topic_arn" {
 }
 
 output "cloudwatch_log_group_name" {
-  description = "Name of the CloudWatch Log Group for Lambda logs"
+  description = "Name of the CloudWatch Log Group"
   value       = aws_cloudwatch_log_group.lambda_logs.name
 }

@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -5,10 +13,10 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-vpc"
-    }
+      Name = "${var.environment}-${var.project_name}-vpc"
+    },
+    var.tags
   )
 }
 
@@ -22,11 +30,10 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-public-${var.availability_zones[count.index]}"
-      Tier = "Public"
-    }
+      Name = "${var.environment}-${var.project_name}-public-${count.index + 1}"
+    },
+    var.tags
   )
 }
 
@@ -38,11 +45,10 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-private-${var.availability_zones[count.index]}"
-      Tier = "Private"
-    }
+      Name = "${var.environment}-${var.project_name}-private-${count.index + 1}"
+    },
+    var.tags
   )
 }
 
@@ -51,10 +57,10 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-igw"
-    }
+      Name = "${var.environment}-${var.project_name}-igw"
+    },
+    var.tags
   )
 }
 
@@ -68,10 +74,10 @@ resource "aws_route_table" "public" {
   }
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-public-rt"
-    }
+      Name = "${var.environment}-${var.project_name}-public-rt"
+    },
+    var.tags
   )
 }
 
@@ -80,10 +86,10 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(
-    var.tags,
     {
-      Name = "${var.environment}-private-rt-${count.index + 1}"
-    }
+      Name = "${var.environment}-${var.project_name}-private-rt-${count.index + 1}"
+    },
+    var.tags
   )
 }
 

@@ -8,14 +8,9 @@ output "dashboard_name" {
   value       = aws_cloudwatch_dashboard.dr_dashboard.dashboard_name
 }
 
-output "ec2_status_alarm_arn" {
-  description = "ARN of the EC2 status alarm"
-  value       = aws_cloudwatch_metric_alarm.primary_ec2_status.arn
-}
-
-output "rds_status_alarm_arn" {
-  description = "ARN of the RDS status alarm"
-  value       = aws_cloudwatch_metric_alarm.primary_rds_status.arn
+output "ec2_cpu_alarm_arn" {
+  description = "ARN of the EC2 CPU alarm"
+  value       = aws_cloudwatch_metric_alarm.ec2_cpu.arn
 }
 
 output "rds_cpu_alarm_arn" {

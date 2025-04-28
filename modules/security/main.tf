@@ -2,7 +2,7 @@
 
 # Create RDS security group
 resource "aws_security_group" "rds" {
-  name_prefix = "${var.environment}-${var.project_name}-rds-"
+  name        = "${var.environment}-rds-sg-${random_id.suffix.hex}"
   description = "Security group for RDS instances"
   vpc_id      = var.vpc_id
 
@@ -26,14 +26,19 @@ resource "aws_security_group" "rds" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(var.tags, {
-    Name = "${var.environment}-${var.project_name}-rds"
-  })
+  tags = {
+    Name = "${var.environment}-rds-sg"
+  }
 }
 
 # Create application security group
+# Random suffix for unique names
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 resource "aws_security_group" "app" {
-  name_prefix = "${var.environment}-${var.project_name}-app-"
+  name        = "${var.environment}-app-sg-${random_id.suffix.hex}"
   description = "Security group for application instances"
   vpc_id      = var.vpc_id
 
@@ -41,38 +46,30 @@ resource "aws_security_group" "app" {
     create_before_destroy = true
   }
 
-  # Frontend ingress rule
+  # Allow inbound traffic only from ALB
   ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = var.alb_security_group_id != null ? [var.alb_security_group_id] : []
-    description     = "Allow HTTP access for frontend"
+    from_port = 3000
+    to_port   = 3000
+    protocol  = "tcp"
+    # security_group_ids = [var.alb_security_group_id]
+    description = "Allow frontend access from ALB"
   }
 
-  # Backend ingress rule
   ingress {
-    from_port       = 8000
-    to_port         = 8000
-    protocol        = "tcp"
-    security_groups = var.alb_security_group_id != null ? [var.alb_security_group_id] : []
-    description     = "Allow HTTP access for backend"
+    from_port = 8000
+    to_port   = 8000
+    protocol  = "tcp"
+    # security_group_ids = [var.alb_security_group_id]
+    description = "Allow backend access from ALB"
   }
 
+  # Allow SSH access from specific CIDR blocks
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = var.ssh_allowed_cidr_blocks
     description = "Allow SSH access from specific IPs"
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow HTTP access from anywhere"
   }
 
   # Allow all outbound traffic
@@ -84,7 +81,7 @@ resource "aws_security_group" "app" {
     description = "Allow all outbound traffic"
   }
 
-  tags = merge(var.tags, {
-    Name = "${var.environment}-${var.project_name}-app"
-  })
+  tags = {
+    Name = "${var.environment}-app-sg"
+  }
 }

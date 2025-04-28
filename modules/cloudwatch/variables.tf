@@ -13,18 +13,6 @@ variable "region" {
   type        = string
 }
 
-variable "primary_instance_id" {
-  description = "ID of the primary EC2 instance"
-  type        = string
-}
-
-variable "primary_rds_id" {
-  description = "ID of the primary RDS instance"
-  type        = string
-}
-
-
-
 variable "alarm_topic_arns" {
   description = "List of SNS topic ARNs for alarms"
   type        = list(string)

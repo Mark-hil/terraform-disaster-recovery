@@ -16,6 +16,17 @@ data "aws_ssm_parameter" "dr_ami" {
   with_decryption = true
 }
 
+# EC2 Instance Module
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
 # EC2 Instances
 resource "aws_instance" "app_instances" {
   count                  = var.instance_count
@@ -31,10 +42,6 @@ resource "aws_instance" "app_instances" {
   user_data = templatefile("${path.module}/templates/user_data.sh.tpl", {
     environment    = var.environment
     project_name   = var.project_name
-    frontend_image = var.frontend_image
-    backend_image  = var.backend_image
-    frontend_port  = var.frontend_port
-    backend_port   = var.backend_port
     DB_HOST        = var.DB_HOST
     DB_NAME        = var.DB_NAME
     DB_USER        = var.DB_USER

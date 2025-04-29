@@ -28,10 +28,7 @@ output "backend_target_group_arn" {
   value       = aws_lb_target_group.backend.arn
 }
 
-output "security_group_id" {
-  description = "ID of the ALB security group"
-  value       = aws_security_group.alb.id
-}
+
 
 output "frontend_target_group_arn" {
   description = "ARN of the frontend target group"

@@ -7,6 +7,13 @@ variable "instance_count" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
+  default     = "t3.micro"
+}
+
+variable "key_name" {
+  description = "Name of the SSH key pair to use for EC2 instances"
+  type        = string
+  default     = null
 }
 
 variable "subnet_ids" {
@@ -73,29 +80,7 @@ variable "dr_ami_parameter" {
   default     = ""
 }
 
-variable "frontend_image" {
-  description = "Docker image for the frontend container"
-  type        = string
-  default     = "markhill97/chat-frontend:1.0"
-}
 
-variable "backend_image" {
-  description = "Docker image for the backend container"
-  type        = string
-  default     = "markhill97/chat-backend:1.0"
-}
-
-variable "frontend_port" {
-  description = "Port for the frontend container"
-  type        = number
-  default     = 3000
-}
-
-variable "backend_port" {
-  description = "Port for backend service"
-  type        = number
-  default     = 8000
-}
 
 variable "DB_HOST" {
   description = "Database host"

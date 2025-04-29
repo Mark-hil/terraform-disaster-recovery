@@ -39,7 +39,7 @@ dr_public_subnet_cidrs = [
 # Database Configuration
 DB_NAME     = "chat_db"
 DB_USER     = "postgres"
-DB_PASSWORD = "postgres"
+DB_PASSWORD = "postgres123"
 DB_HOST     = "" # Will be populated by RDS endpoint
 
 # RDS Settings

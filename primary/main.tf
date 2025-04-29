@@ -103,7 +103,7 @@ module "security_group" {
 module "primary_ec2" {
   source = "../modules/ec2"
   providers = {
-    aws = aws.primary
+    aws = aws
   }
 
   environment          = var.environment
@@ -111,7 +111,7 @@ module "primary_ec2" {
   instance_count      = var.instance_count
   instance_type       = var.instance_type
   vpc_id             = module.vpc.vpc_id
-  subnet_ids          = module.vpc.private_subnet_ids
+  subnet_ids          = module.vpc.public_subnet_ids  # Changed to public subnets
   security_group_ids  = [module.security_group.app_security_group_id]
   instance_profile_name = module.iam.ec2_instance_profile_name
   root_volume_size   = var.root_volume_size
@@ -199,7 +199,8 @@ module "alb" {
   frontend_port              = 3000
   backend_port               = 8000
   health_check_path_frontend = "/"
-  health_check_path_backend  = "/admin/"
+  health_check_path_backend  = "/"
+  alb_security_group_id      = module.security_group.alb_security_group_id
 
   tags = var.tags
 }

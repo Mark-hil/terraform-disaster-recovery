@@ -60,7 +60,7 @@ module "iam" {
 module "dr_s3" {
   source = "../modules/s3"
   providers = {
-    aws = aws
+    aws = aws.dr
   }
 
   environment = var.environment
@@ -184,7 +184,7 @@ module "dr_ec2" {
   instance_count      = var.instance_count
   instance_type       = var.instance_type
   vpc_id             = module.dr_vpc.vpc_id
-  subnet_ids          = module.dr_vpc.private_subnet_ids
+  subnet_ids          = module.dr_vpc.public_subnet_ids  # Changed to public subnets
   security_group_ids  = [module.security_group.app_security_group_id]
   instance_profile_name = module.iam.ec2_instance_profile_name
   root_volume_size   = var.root_volume_size
@@ -209,6 +209,7 @@ module "dr_alb" {
   vpc_id        = module.dr_vpc.vpc_id
   subnet_ids    = module.dr_vpc.public_subnet_ids
   instance_ids  = module.dr_ec2.instance_ids
+  alb_security_group_id = module.security_group.alb_security_group_id
   frontend_port = 3000
   backend_port  = 8000
 

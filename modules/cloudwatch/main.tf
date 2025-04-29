@@ -1,5 +1,14 @@
 # CloudWatch Module for DR Monitoring
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
 # SNS Topic for Alerts
 resource "aws_sns_topic" "dr_alerts" {
   name = "${var.environment}-${var.region}-dr-alerts"

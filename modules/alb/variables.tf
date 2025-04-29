@@ -9,7 +9,12 @@ variable "name" {
 }
 
 variable "vpc_id" {
-  description = "ID of the VPC where the ALB will be created"
+  description = "VPC ID where ALB will be created"
+  type        = string
+}
+
+variable "alb_security_group_id" {
+  description = "ID of the ALB security group"
   type        = string
 }
 
@@ -54,7 +59,13 @@ variable "health_check_path_backend" {
 }
 
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "log_bucket" {
+  description = "Name of the S3 bucket for ALB access logs"
+  type        = string
+  default     = ""
 }

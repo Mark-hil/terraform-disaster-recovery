@@ -20,6 +20,73 @@ resource "aws_vpc" "main" {
   )
 }
 
+# Create VPC endpoints for SSM
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.ssm"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  subnet_ids         = aws_subnet.private[*].id
+
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "${var.environment}-ssm-endpoint"
+    Environment = var.environment
+  }
+}
+
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  subnet_ids         = aws_subnet.private[*].id
+
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "${var.environment}-ssmmessages-endpoint"
+    Environment = var.environment
+  }
+}
+
+resource "aws_vpc_endpoint" "ec2messages" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.ec2messages"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  subnet_ids         = aws_subnet.private[*].id
+
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "${var.environment}-ec2messages-endpoint"
+    Environment = var.environment
+  }
+}
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name_prefix = "${var.environment}-vpc-endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  tags = {
+    Name        = "${var.environment}-vpc-endpoints"
+    Environment = var.environment
+  }
+}
+
 # Public Subnets
 resource "aws_subnet" "public" {
   count             = min(length(var.public_subnet_cidrs), length(var.availability_zones))

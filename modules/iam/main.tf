@@ -103,11 +103,19 @@ resource "aws_iam_role" "s3_replication" {
   })
 }
 
-# Create EC2 instance profile only in primary region
+
+# Create EC2 instance profile
 resource "aws_iam_instance_profile" "ec2" {
   count    = var.create_roles ? 1 : 0
   name     = local.ec2_role_name
   role     = aws_iam_role.ec2[0].name
+}
+
+# Attach AmazonSSMManagedInstanceCore policy to EC2 role
+resource "aws_iam_role_policy_attachment" "ec2_ssm" {
+  count      = var.create_roles ? 1 : 0
+  role       = aws_iam_role.ec2[0].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 # Add S3 bucket ARNs variable
@@ -138,7 +146,24 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "ec2:DescribeInstances",
           "ec2:DescribeInstanceStatus",
           "ec2:StartInstances",
-          "ec2:StopInstances"
+          "ec2:StopInstances",
+          "ssm:UpdateInstanceInformation",
+          "ssm:ListInstanceAssociations",
+          "ssm:DescribeInstanceProperties",
+          "ssm:DescribeDocumentParameters",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:Describe*",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:RegisterTargets"
         ]
         Resource = "*"
       }

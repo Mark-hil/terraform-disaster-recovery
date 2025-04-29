@@ -1,3 +1,8 @@
+# Get VPC details
+data "aws_vpc" "selected" {
+  id = var.vpc_id
+}
+
 # RDS Subnet Group
 resource "aws_db_subnet_group" "primary" {
   name       = "${var.environment}-${var.project_name}-subnet-group"
@@ -49,6 +54,15 @@ resource "aws_security_group" "rds" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = var.security_group_ids
+    description     = "Allow PostgreSQL access from application security groups"
+  }
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    cidr_blocks     = [data.aws_vpc.selected.cidr_block]
+    description     = "Allow PostgreSQL access from VPC CIDR"
   }
 
   egress {

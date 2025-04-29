@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
 # Primary S3 Bucket
 resource "aws_s3_bucket" "primary" {
   bucket        = var.bucket_name

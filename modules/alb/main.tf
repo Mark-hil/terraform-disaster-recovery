@@ -1,52 +1,40 @@
 # Application Load Balancer Module
 
-# ALB Security Group
-resource "aws_security_group" "alb" {
-  name        = "${var.environment}-${var.name}-alb-sg"
-  description = "Security group for ALB"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Frontend HTTP access"
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
   }
-
-  ingress {
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Backend API access"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(var.tags, {
-    Name = "${var.name}-alb-sg"
-  })
 }
+
+
 
 # Application Load Balancer
 resource "aws_lb" "app" {
-  name               = var.name
+  name               = trimsuffix(substr("${var.environment}-${var.name}", 0, 24), "-") # max 24 chars, no trailing hyphen
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [var.alb_security_group_id]
   subnets            = var.subnet_ids
 
   enable_deletion_protection = false
-  enable_http2               = true
+  enable_http2              = true
+  idle_timeout             = 60
+
+  # Enable access logs if bucket is provided
+  dynamic "access_logs" {
+    for_each = var.log_bucket != "" ? [1] : []
+    content {
+      bucket  = var.log_bucket
+      prefix  = "alb-logs"
+      enabled = true
+    }
+  }
 
   tags = merge(var.tags, {
-    Name = var.name
+    Name = "${var.environment}-${var.name}-alb"
   })
 }
 
@@ -62,13 +50,23 @@ resource "aws_lb_target_group" "frontend" {
     enabled             = true
     healthy_threshold   = 2
     interval            = 15
-    matcher             = "200"
+    matcher             = "200-399"
     path                = "/"
-    port                = "3000"
+    port                = "traffic-port"
     protocol            = "HTTP"
     timeout             = 5
-    unhealthy_threshold = 2
+    unhealthy_threshold = 3
   }
+
+  stickiness {
+    type            = "app_cookie"
+    cookie_name     = "session"
+    cookie_duration = 86400
+    enabled         = true
+  }
+
+  # Deregistration delay
+  deregistration_delay = 30
 
   tags = merge(var.tags, {
     Name = "${var.environment}-${var.name}-frontend-tg"
@@ -88,12 +86,22 @@ resource "aws_lb_target_group" "backend" {
     healthy_threshold   = 2
     interval            = 15
     matcher             = "200"
-    path                = "/admin/"
+    path                = "/"
     port                = "8000"
     protocol            = "HTTP"
     timeout             = 5
-    unhealthy_threshold = 2
+    unhealthy_threshold = 3
   }
+
+  stickiness {
+    type            = "app_cookie"
+    cookie_name     = "session"
+    cookie_duration = 86400
+    enabled         = true
+  }
+
+  # Deregistration delay
+  deregistration_delay = 30
 
   tags = merge(var.tags, {
     Name = "${var.environment}-${var.name}-backend-tg"

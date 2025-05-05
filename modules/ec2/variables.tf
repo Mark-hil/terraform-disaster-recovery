@@ -102,3 +102,10 @@ variable "DB_PASSWORD" {
   type        = string
   sensitive   = true
 }
+
+variable "ALB_DNS" {
+  description = "DNS name of the ALB"
+  type        = string
+  default     = ""  
+  
+}

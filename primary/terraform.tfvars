@@ -21,7 +21,7 @@ DB_HOST                = "" # This will be populated by RDS endpoint
 instance_class         = "db.t3.micro"
 allocated_storage      = 100
 engine_version         = "16"
-parameter_group_family = "postgres16"
+# Removed invalid attribute "parameter_group_family"
 
 # S3 Configuration
 # bucket_name = "aws-dr-project-primary"

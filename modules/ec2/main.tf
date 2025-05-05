@@ -46,6 +46,7 @@ resource "aws_instance" "app_instances" {
     DB_NAME        = var.DB_NAME
     DB_USER        = var.DB_USER
     DB_PASSWORD    = var.DB_PASSWORD
+    
   })
 
   root_block_device {
@@ -62,11 +63,11 @@ resource "aws_instance" "app_instances" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes = [
-      ami,
-      user_data,
-      user_data_base64
-    ]
+    # ignore_changes = [
+    #   ami,
+    #   user_data,
+    #   user_data_base64
+    # ]
   }
 }
 

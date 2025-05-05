@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "backend" {
     healthy_threshold   = 2
     interval            = 15
     matcher             = "200"
-    path                = "/"
+    path                = "/api/health/"
     port                = "8000"
     protocol            = "HTTP"
     timeout             = 5
@@ -120,15 +120,20 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
-# Backend Listener
-resource "aws_lb_listener" "backend" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = "8000"
-  protocol          = "HTTP"
+# Backend Listener Rule
+resource "aws_lb_listener_rule" "backend" {
+  listener_arn = aws_lb_listener.frontend.arn
+  priority     = 100
 
-  default_action {
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*", "/admin/*"]
+    }
   }
 }
 

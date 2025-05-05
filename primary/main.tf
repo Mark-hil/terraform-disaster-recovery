@@ -122,6 +122,7 @@ module "primary_ec2" {
   DB_USER          = var.DB_USER
   DB_PASSWORD      = var.DB_PASSWORD
   DB_HOST          = module.primary_rds.rds_endpoint
+ 
 }
 
 # AMI Replication
@@ -201,6 +202,7 @@ module "alb" {
   health_check_path_frontend = "/"
   health_check_path_backend  = "/"
   alb_security_group_id      = module.security_group.alb_security_group_id
+
 
   tags = var.tags
 }

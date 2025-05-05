@@ -53,10 +53,11 @@ mkdir -p /app
 cd /app
 
 # Set application configuration
-FRONTEND_IMAGE="markhill97/chat-app-frontend:latest"
-BACKEND_IMAGE="markhill97/chat-app-backend:latest"
+FRONTEND_IMAGE="markhill97/chat-app-frontend:v1.1"
+BACKEND_IMAGE="markhill97/chat-app-backend:v1.0"
 FRONTEND_PORT=3000
 BACKEND_PORT=8000
+
 
 # Get instance metadata
 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
@@ -117,7 +118,7 @@ services:
     ports:
       - "$FRONTEND_PORT:$FRONTEND_PORT"
     environment:
-      - VITE_API_BASE_URL=http://$ALB_DNS:$BACKEND_PORT
+      - VITE_API_BASE_URL=http://chatapp-api.amalitech-dev.net
       - PORT=$FRONTEND_PORT
       - HOST=0.0.0.0
       - NODE_ENV=production
@@ -138,8 +139,8 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - ALLOWED_HOSTS=$ALB_DNS,localhost,127.0.0.1
-      - CORS_ALLOWED_ORIGINS=http://$ALB_DNS,http://localhost:3000
+      - ALLOWED_HOSTS=chatapp.amalitech-dev.net,localhost,127.0.0.1,*
+      - CORS_ALLOWED_ORIGINS=http://chatapp.amalitech-dev.net,http://localhost:$FRONTEND_PORT,*
       - DJANGO_SETTINGS_MODULE=chat_project.settings
     restart: unless-stopped
     networks:

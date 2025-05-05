@@ -18,10 +18,10 @@ output "target_group_arn" {
   value       = aws_lb_target_group.frontend.arn
 }
 
-output "backend_listener_arn" {
-  description = "ARN of the backend listener"
-  value       = aws_lb_listener.backend.arn
-}
+# output "backend_listener_arn" {
+#   description = "ARN of the backend listener"
+#   value       = aws_lb_listener.backend.arn
+# }
 
 output "backend_target_group_arn" {
   description = "ARN of the backend target group"
